@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘本大冒险：故事记忆与复述游戏</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for cartoon icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cartoon: ['"ZCOOL KuaiLe"', 'cursive', 'sans-serif'],
+                        fredoka: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        aqua: '#00d2d3',
+                        sunny: '#ff9f43',
+                        bubble: '#ff6b6b',
+                        berry: '#5f27cd',
+                        grass: '#10ac84',
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                        'wiggle': 'wiggle 0.5s ease-in-out infinite',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        'splash': 'splash 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        },
+                        pop: {
+                            '0%': { transform: 'scale(0.8)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        splash: {
+                            '0%': { transform: 'scale(0.3) translateY(0)', opacity: '1' },
+                            '50%': { transform: 'scale(1.2) translateY(-20px)', opacity: '0.8' },
+                            '100%': { transform: 'scale(1) translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 50%, #70a1ff 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Cute Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff9f43;
+            border-radius: 10px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border: 4px solid #ffffff;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), inset 0 0 15px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Tooltip style */
+        .word-token {
+            display: inline-block;
+            position: relative;
+            padding: 2px 6px;
+            margin: 3px 2px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            border: 2px solid transparent;
+        }
+
+        .word-token:hover {
+            background-color: #ffeaa7;
+            transform: translateY(-2px) scale(1.05);
+            border-color: #ff9f43;
+        }
+
+        .word-token.vanished {
+            display: none !important;
+        }
+
+        .drop-target-slot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+            height: 38px;
+            margin: 2px 4px;
+            border: 3px dashed #ff9f43;
+            background: rgba(255, 242, 212, 0.8);
+            border-radius: 12px;
+            vertical-align: middle;
+            transition: all 0.3s;
+            padding: 0 8px;
+            font-weight: bold;
+            color: #d63031;
+        }
+
+        .drop-target-slot.filled {
+            border: 3px solid #10ac84;
+            background: #e3fcfe;
+            color: #0abde3;
+        }
+
+        .drop-target-slot.drag-over {
+            background: #ffeaa7;
+            transform: scale(1.1);
+            border-color: #ee5253;
+        }
+
+        /* Water Jar Container Styling */
+        .water-jar-container {
+            background: linear-gradient(180deg, #48dbfb 0%, #0abde3 70%, #0097e6 100%);
+            border: 6px solid #ffffff;
+            box-shadow: 0 10px 25px rgba(0, 151, 230, 0.4), inset 0 5px 15px rgba(255,255,255,0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .water-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 80%;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 40%;
+            animation: wave 8s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0) rotate(0deg); }
+            100% { transform: translateX(-50%) rotate(360deg); }
+        }
+
+        .jar-word-chip {
+            background: #ffffff;
+            color: #2e86de;
+            border: 3px solid #ff9f43;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: grab;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+
+        .jar-word-chip:active {
+            cursor: grabbing;
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .jar-word-chip:hover {
+            transform: translateY(-3px) scale(1.05);
+            background: #fff9e6;
+            border-color: #ee5253;
+        }
+
+        /* Custom tooltip container */
+        .tooltip-popover {
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3436;
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            z-index: 50;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .tooltip-popover::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: #2d3436 transparent transparent transparent;
+        }
+
+        .word-token:hover .tooltip-popover, .word-token.active .tooltip-popover {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-5px);
+        }
+
+        /* Option Buttons Task 2 */
+        .option-btn {
+            background: #ffffff;
+            border: 3px solid #74b9ff;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .option-btn:hover {
+            border-color: #0984e3;
+            background: #e3fcfe;
+            transform: translateY(-2px) scale(1.01);
+        }
+    </style>
+</head>
+<body class="font-cartoon text-gray-800 flex flex-col items-center justify-between min-h-screen p-2 sm:p-4">
+
+    <!-- Top Navigation & Header Header Bar -->
+    <header class="w-full max-w-6xl glass-card rounded-3xl p-3 sm:p-4 mb-4 flex flex-col md:flex-row items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-sunny text-white flex items-center justify-center text-2xl shadow-md animate-bounce-slow">
+                <i class="fa-solid fa-book-open-reader"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 tracking-wide">
+                    绘本大冒险：故事记忆与复述
+                </h1>
+                <p class="text-xs sm:text-sm text-gray-600 font-sans font-semibold">让快乐有声，让故事生动！</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex items-center gap-2 bg-gray-100 p-1.5 rounded-2xl border-2 border-white shadow-inner">
+            <button id="tab-1-btn" onclick="switchTab(1)" class="px-4 py-2 rounded-xl text-base sm:text-lg font-bold transition-all bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md transform scale-105">
+                <i class="fa-solid fa-puzzle-piece mr-1"></i> 关卡1：填空挑战
+            </button>
+            <button id="tab-2-btn" onclick="switchTab(2)" class="px-4 py-2 rounded-xl text-base sm:text-lg font-bold transition-all text-gray-600 hover:text-amber-500">
+                <i class="fa-solid fa-image-portrait mr-1"></i> 关卡2：看图选句
+            </button>
+        </div>
+
+        <!-- Score & Time Panel -->
+        <div class="flex items-center gap-3 bg-amber-50 px-4 py-2 rounded-2xl border-2 border-amber-300">
+            <div class="text-center">
+                <div class="text-xs text-amber-700 font-sans font-bold uppercase">当前积分</div>
+                <div id="total-score" class="text-2xl font-black text-amber-600 font-fredoka">0</div>
+            </div>
+            <div class="w-0.5 h-8 bg-amber-300"></div>
+            <div class="text-center">
+                <div class="text-xs text-amber-700 font-sans font-bold uppercase">通关星级</div>
+                <div id="stars-display" class="text-xl text-amber-500 flex gap-0.5">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-regular fa-star"></i>
+                    <i class="fa-regular fa-star"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="w-full max-w-6xl flex-grow">
+
+        <!-- ================= PAGE 1: TASK 1 (故事记忆与填空) ================= -->
+        <section id="page-1" class="glass-card rounded-3xl p-4 sm:p-6 shadow-2xl relative">
+            
+            <!-- Controls Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-6 bg-orange-100/70 p-4 rounded-2xl border-2 border-orange-200">
+                <div class="flex items-center gap-2">
+                    <button id="start-btn" onclick="startMemoryChallenge()" class="px-5 py-2.5 bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-bold text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
+                        <i class="fa-solid fa-play"></i> 开始挑战 (5分钟)
+                    </button>
+
+                    <button id="skip-to-reconstruct-btn" onclick="skipToReconstruction()" class="hidden px-4 py-2.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-sm sm:text-base rounded-2xl shadow transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-forward-fast"></i> 准备好立即拼词
+                    </button>
+
+                    <button onclick="speakFullStory()" class="px-4 py-2.5 bg-sky-400 hover:bg-sky-500 text-white font-bold text-sm sm:text-base rounded-2xl shadow transition-all flex items-center gap-2" title="听全文朗读">
+                        <i class="fa-solid fa-volume-high"></i> 朗读故事
+                    </button>
+                </div>
+
+                <!-- Timer & Info Display -->
+                <div class="flex items-center gap-4">
+                    <div class="bg-white px-4 py-2 rounded-xl border-2 border-orange-300 shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-hourglass-half text-orange-500 animate-spin" style="animation-duration: 4s;"></i>
+                        <span id="timer-label" class="text-sm font-sans font-bold text-gray-700">准备状态</span>
+                        <span id="countdown-timer" class="font-fredoka text-xl font-bold text-red-500">05:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Story Reading & Slot Canvas Area (Left 8 Cols) -->
+                <div class="lg:col-span-8 flex flex-col justify-between bg-white/80 p-5 sm:p-7 rounded-3xl border-3 border-amber-200 shadow-inner relative min-h-[420px]">
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-4 border-b-2 border-dashed border-amber-200 pb-2">
+                            <span class="text-lg font-bold text-amber-700 flex items-center gap-2">
+                                <i class="fa-solid fa-book"></i> 《沙漠绿洲奇遇记》
+                            </span>
+                            <span class="text-xs text-gray-500 font-sans">💡 提示：点击任意词语可查看拼音与英文翻译</span>
+                        </div>
+
+                        <!-- Story Paragraph Content Holder -->
+                        <div id="story-paragraph-container" class="text-xl sm:text-2xl leading-relaxed sm:leading-loose text-gray-800 font-semibold tracking-wide select-none">
+                            <!-- Story tokens render dynamically here -->
+                        </div>
+                    </div>
+
+                    <!-- Stage Guidance Hint Box -->
+                    <div id="stage-guidance" class="mt-6 p-3 bg-amber-50 border-2 border-amber-300 rounded-2xl text-center text-amber-800 text-sm sm:text-base font-bold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-info text-amber-500 text-lg"></i>
+                        <span>按“开始挑战”启动倒计时！词语会每分钟逐渐消失入水缸，考考你的记忆力！</span>
+                    </div>
+
+                    <!-- Submit / Check Answer Button for Reconstruction -->
+                    <div id="submit-reconstruct-box" class="hidden mt-4 text-center">
+                        <button onclick="checkReconstructionResult()" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-green-600 text-white font-bold text-xl rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.01] transition-all flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-circle-check"></i> 提交填空校验答案
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Water Jar (大水缸) Side Panel Container (Right 4 Cols) -->
+                <div class="lg:col-span-4 flex flex-col">
+                    <div class="water-jar-container rounded-3xl p-4 flex-grow flex flex-col justify-between min-h-[350px]">
+                        
+                        <!-- Jar Header -->
+                        <div class="relative z-10 flex items-center justify-between border-b-2 border-white/40 pb-2 mb-3">
+                            <h3 class="text-xl font-bold text-white flex items-center gap-2 drop-shadow">
+                                <i class="fa-solid fa-box-archive text-amber-300"></i> 大水缸暂存区
+                            </h3>
+                            <span id="jar-count" class="bg-amber-400 text-amber-900 font-fredoka font-bold text-xs px-2.5 py-1 rounded-full border border-white">
+                                0 词
+                            </span>
+                        </div>
+
+                        <!-- Jar Drop Words Area -->
+                        <div id="water-jar-drop-area" class="relative z-10 flex-grow flex flex-wrap content-start gap-2.5 p-2 overflow-y-auto max-h-[360px]">
+                            <!-- Vanished words drift into this jar dynamically -->
+                            <div id="jar-empty-tip" class="w-full text-center text-white/80 py-12 text-base font-bold italic">
+                                🌊 暂存水缸为空<br><span class="text-xs font-normal">开始挑战后消失的词语会沉入这里哦</span>
+                            </div>
+                        </div>
+
+                        <!-- Jar Footer Wave Decoration -->
+                        <div class="water-wave"></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= PAGE 2: TASK 2 (看图选句判断) ================= -->
+        <section id="page-2" class="hidden glass-card rounded-3xl p-4 sm:p-6 shadow-2xl">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-amber-600 mb-1">看图选句挑战 (看图识剧情)</h2>
+                <p class="text-sm text-gray-600 font-sans">根据左侧图中的故事画面，在右侧选择最符合的句子表达！</p>
+            </div>
+
+            <!-- Quiz Cards List -->
+            <div id="quiz-cards-container" class="space-y-6">
+                <!-- Dynamically populated 6 cards -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full max-w-6xl mt-6 mb-2 text-center text-gray-700 text-xs sm:text-sm font-sans font-semibold">
+        <p>🎨 沙漠绿洲大冒险 · 互动儿童故事记忆与复述训练课件</p>
+    </footer>
+
+
+    <!-- REACTION MODAL (Correct / Wrong Response Popup) -->
+    <div id="reaction-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center border-4 border-amber-300 shadow-2xl animate-pop relative overflow-hidden">
+            <!-- Modal Header Badge -->
+            <div id="modal-badge" class="inline-block px-4 py-1.5 rounded-full text-white font-bold text-sm mb-3 bg-emerald-500 shadow">
+                答对啦！
+            </div>
+
+            <!-- Reaction Image Display -->
+            <div class="relative w-40 h-40 mx-auto mb-4 rounded-2xl overflow-hidden border-4 border-amber-200 bg-amber-50 shadow-inner flex items-center justify-center">
+                <img id="modal-reaction-img" src="" alt="Feedback Reaction" class="object-cover w-full h-full">
+            </div>
+
+            <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-2">太棒了！判断正确！</h3>
+            <p id="modal-desc" class="text-sm font-sans text-gray-600 mb-6 font-semibold">故事理解得很准确，继续加油！</p>
+
+            <button onclick="closeReactionModal()" class="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-lg rounded-2xl shadow-lg transition-all">
+                继续挑战 <i class="fa-solid fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- FINAL VICTORY SCORE MODAL -->
+    <div id="victory-modal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card rounded-3xl max-w-md w-full p-6 sm:p-8 text-center border-4 border-amber-400 shadow-2xl animate-pop relative">
+            <div class="w-20 h-20 bg-amber-400 text-white rounded-full mx-auto -mt-14 mb-3 flex items-center justify-center text-4xl shadow-lg border-4 border-white animate-bounce-slow">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <h2 class="text-3xl font-bold text-amber-600 mb-1">冒险成功！</h2>
+            <p class="text-sm font-sans text-gray-600 mb-4">你成功掌握了这段精彩的绘本故事！</p>
+
+            <!-- Final Score Display -->
+            <div class="bg-amber-50 rounded-2xl p-4 border-2 border-amber-200 mb-6 shadow-inner">
+                <div class="text-xs text-amber-700 font-sans font-bold uppercase mb-1">最终得分</div>
+                <div id="final-modal-score" class="text-5xl font-black text-amber-500 font-fredoka mb-2">100</div>
+                
+                <div id="final-modal-stars" class="text-3xl text-amber-400 flex justify-center gap-2 mb-2">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <p id="final-evaluation-text" class="text-sm font-bold text-amber-800">小神童！复述故事一流！</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="resetWholeGame()" class="flex-1 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-base rounded-2xl transition-all">
+                    <i class="fa-solid fa-rotate-right"></i> 再玩一次
+                </button>
+                <button onclick="closeVictoryModal()" class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-base rounded-2xl shadow-lg transition-all">
+                    查看成就
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* ================= AUDIO SYNTHESIS & SOUND EFFECTS ================= */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'splash') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.25);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.setValueAtTime(180, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'victory') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.15);
+                    osc.frequency.setValueAtTime(659.25, now + 0.3);
+                    osc.frequency.setValueAtTime(880, now + 0.45);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+                    osc.start(now);
+                    osc.stop(now + 0.8);
+                }
+            } catch(e) {
+                console.log('Audio init error:', e);
+            }
+        }
+
+        // Text-to-speech helper
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        /* ================= GAME DATA DEFINITIONS ================= */
+        // Segmented Story Tokens with Vocabulary Dictionary
+        const STORY_TOKENS = [
+            { id: 1, text: "红狐狸", pinyin: "hóng hú li", en: "Red Fox", isKey: true },
+            { id: 2, text: "、", pinyin: "", en: "", isKey: false },
+            { id: 3, text: "独眼狼", pinyin: "dú yǎn láng", en: "One-eyed Wolf", isKey: true },
+            { id: 4, text: "和", pinyin: "hé", en: "and", isKey: false },
+            { id: 5, text: "双头熊", pinyin: "shuāng tóu xióng", en: "Two-headed Bear", isKey: true },
+            { id: 6, text: "要留", pinyin: "yào liú", en: "want to keep", isKey: false },
+            { id: 7, text: "婴儿", pinyin: "yīng ér", en: "Baby", isKey: true },
+            { id: 8, text: "当", pinyin: "dāng", en: "as", isKey: false },
+            { id: 9, text: "玩具", pinyin: "wán jù", en: "Toy", isKey: true },
+            { id: 10, text: "才给", pinyin: "cái gěi", en: "then give", isKey: false },
+            { id: 11, text: "水", pinyin: "shuǐ", en: "Water", isKey: true },
+            { id: 12, text: "喝。", pinyin: "hē", en: "drink", isKey: false },
+            { id: 13, text: "大家", pinyin: "dà jiā", en: "Everyone", isKey: false },
+            { id: 14, text: "拒绝", pinyin: "jù jué", en: "Refuse", isKey: true },
+            { id: 15, text: "并与坏蛋", pinyin: "bìng yǔ huài dàn", en: "and with bad guys", isKey: false },
+            { id: 16, text: "勇敢", pinyin: "yǒng gǎn", en: "Brave", isKey: true },
+            { id: 17, text: "反抗", pinyin: "fǎn kàng", en: "Fight back", isKey: true },
+            { id: 18, text: "。", pinyin: "", en: "", isKey: false },
+            { id: 19, text: "关键时刻", pinyin: "guān jiàn shí kè", en: "Critical moment", isKey: true },
+            { id: 20, text: "，", pinyin: "", en: "", isKey: false },
+            { id: 21, text: "婴儿", pinyin: "yīng ér", en: "Baby", isKey: true },
+            { id: 22, text: "展示", pinyin: "zhǎn shì", en: "Show", isKey: false },
+            { id: 23, text: "功夫", pinyin: "gōng fu", en: "Kung Fu", isKey: true },
+            { id: 24, text: "，一记", pinyin: "yí jì", en: "one hit of", isKey: false },
+            { id: 25, text: "飞踢", pinyin: "fēi tī", en: "Flying kick", isKey: true },
+            { id: 26, text: "打晕", pinyin: "dǎ yūn", en: "Knock out", isKey: true },
+            { id: 27, text: "狐狸，几拳打跑", pinyin: "hú li, jǐ quán dǎ pǎo", en: "fox, punch away", isKey: false },
+            { id: 28, text: "坏蛋", pinyin: "huài dàn", en: "Bad guys", isKey: true },
+            { id: 29, text: "！大家成功喝到了", pinyin: "dà jiā chéng gōng hē dào le", en: "Everyone successfully drank", isKey: false },
+            { id: 30, text: "甜甜的", pinyin: "tián tián de", en: "Sweet", isKey: true },
+            { id: 31, text: "水，开心地在湖里", pinyin: "shuǐ, kāi xīn de zài hú lǐ", en: "water, happily in lake", isKey: false },
+            { id: 32, text: "游泳", pinyin: "yóu yǒng", en: "Swim", isKey: true },
+            { id: 33, text: "。故事告诉我们：要勇敢保护", pinyin: "gù shì gào sù wǒ men: yào yǒng gǎn bǎo hù", en: "Story tells us: bravely protect", isKey: false },
+            { id: 34, text: "伙伴", pinyin: "huǒ bàn", en: "Partner / Friends", isKey: true },
+            { id: 35, text: "，不能向坏蛋", pinyin: "bù néng xiàng huài dàn", en: "cannot to bad guys", isKey: false },
+            { id: 36, text: "低头", pinyin: "dī tóu", en: "Bow / Surrender", isKey: true },
+            { id: 37, text: "！", pinyin: "", en: "", isKey: false }
+        ];
+
+        // Task 2 Quiz Items Data
+        const TASK2_QUIZ_ITEMS = [
+            {
+                id: 1,
+                img: "https://i.ibb.co.com/DDb9MCsK/image.png",
+                correctSentence: "红狐狸、独眼狼和双头熊要留婴儿当玩具才给水喝。",
+                options: [
+                    "红狐狸、独眼狼和双头熊要留婴儿当玩具才给水喝。",
+                    "大家开心地在沙漠湖里一块划船下棋。",
+                    "红狐狸和小伙伴们高高兴兴地分享西瓜。"
+                ]
+            },
+            {
+                id: 2,
+                img: "https://i.ibb.co.com/C3rmFjBN/image.png",
+                correctSentence: "关键时刻，婴儿展示功夫！",
+                options: [
+                    "婴儿在草地上困得睡着了。",
+                    "关键时刻，婴儿展示功夫！",
+                    "大家给小婴儿准备了丰富的甜品美食。"
+                ]
+            },
+            {
+                id: 3,
+                img: "https://i.ibb.co.com/FbmMrfD3/image.png",
+                correctSentence: "婴儿一记飞踢打晕狐狸！",
+                options: [
+                    "小狐狸在树荫底下快活地跳舞。",
+                    "婴儿一记飞踢打晕狐狸！",
+                    "大灰狼给红狐狸送上了美味的苹果。"
+                ]
+            },
+            {
+                id: 4,
+                img: "https://i.ibb.co.com/pjQWRPW2/image.png",
+                correctSentence: "查理斯用大鹿角把独眼大灰狼甩到了天空。",
+                options: [
+                    "查理斯用大鹿角把独眼大灰狼甩到了天空。",
+                    "独眼狼跳上天空摘下了一朵白云。",
+                    "查理斯和独眼狼手拉着手唱着歌。"
+                ]
+            },
+            {
+                id: 5,
+                img: "https://i.ibb.co.com/35xrCg5f/image.png",
+                correctSentence: "泡泡福开心地在湖里玩水。",
+                options: [
+                    "泡泡福害怕地躲在树干后面不敢出来。",
+                    "泡泡福在湖边堆了一个漂亮的沙滩城堡。",
+                    "泡泡福开心地在湖里玩水。"
+                ]
+            },
+            {
+                id: 6,
+                img: "https://i.ibb.co.com/tPHD9K59/image.png",
+                correctSentence: "布兰克波得与婴儿在水里开心地游泳。",
+                options: [
+                    "布兰克波得与婴儿在水里开心地游泳。",
+                    "布兰克波得正背着婴儿在沙漠里艰难赶路。",
+                    "布兰克波得和婴儿在沙滩上睡午觉。"
+                ]
+            }
+        ];
+
+        /* ================= GAME STATE VARIABLES ================= */
+        let totalScore = 0;
+        let task1Score = 0;
+        let task2Score = 0;
+        let task2AnsweredCount = 0;
+
+        let gameStage = 0; // 0: initial, 1: vanishing, 2: reconstruction
+        let countdownTimerId = null;
+        let remainingSeconds = 300; // 5 mins
+        let vanishIntervalId = null;
+
+        let vanishedTokensList = []; // Tokens currently in water jar
+        let currentDragTokenId = null;
+
+        /* ================= APP INITIALIZATION ================= */
+        window.addEventListener('DOMContentLoaded', () => {
+            renderStoryParagraph();
+            renderTask2QuizCards();
+            updateScoreUI();
+        });
+
+        /* Switch Tab Logic */
+        function switchTab(tabNum) {
+            playSound('click');
+            const page1 = document.getElementById('page-1');
+            const page2 = document.getElementById('page-2');
+            const btn1 = document.getElementById('tab-1-btn');
+            const btn2 = document.getElementById('tab-2-btn');
+
+            if (tabNum === 1) {
+                page1.classList.remove('hidden');
+                page2.classList.add('hidden');
+
+                btn1.className = "px-4 py-2 rounded-xl text-base sm:text-lg font-bold transition-all bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md transform scale-105";
+                btn2.className = "px-4 py-2 rounded-xl text-base sm:text-lg font-bold transition-all text-gray-600 hover:text-amber-500";
+            } else {
+                page2.classList.remove('hidden');
+                page1.classList.add('hidden');
+
+                btn2.className = "px-4 py-2 rounded-xl text-base sm:text-lg font-bold transition-all bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md transform scale-105";
+                btn1.className = "px-4 py-2 rounded-xl text-base sm:text-lg font-bold transition-all text-gray-600 hover:text-amber-500";
+            }
+        }
+
+        /* ================= TASK 1: MEMORY & RECONSTRUCTION LOGIC ================= */
+        
+        // Render Initial Full Story
+        function renderStoryParagraph() {
+            const container = document.getElementById('story-paragraph-container');
+            container.innerHTML = '';
+
+            STORY_TOKENS.forEach(token => {
+                if (gameStage === 2 && token.isVanished) {
+                    // Create Drop Slot
+                    const slot = document.createElement('div');
+                    slot.className = 'drop-target-slot';
+                    slot.dataset.tokenId = token.id;
+                    slot.setAttribute('ondragover', 'handleDragOver(event)');
+                    slot.setAttribute('ondragleave', 'handleDragLeave(event)');
+                    slot.setAttribute('ondrop', 'handleDropOnSlot(event, ' + token.id + ')');
+                    slot.onclick = () => handleSlotClick(token.id);
+
+                    if (token.userFilledId) {
+                        const filledToken = STORY_TOKENS.find(t => t.id === token.userFilledId);
+                        slot.classList.add('filled');
+                        slot.innerText = filledToken.text;
+                    } else {
+                        slot.innerText = '❓';
+                    }
+
+                    container.appendChild(slot);
+                } else {
+                    // Create Word Token
+                    const span = document.createElement('span');
+                    span.className = `word-token ${token.isVanished ? 'vanished' : ''}`;
+                    span.dataset.id = token.id;
+                    span.innerText = token.text;
+
+                    // Speech audio on click + pinyin tooltip
+                    span.onclick = () => {
+                        playSound('click');
+                        if (token.text.trim()) speakText(token.text);
+                    };
+
+                    if (token.pinyin) {
+                        const popover = document.createElement('div');
+                        popover.className = 'tooltip-popover';
+                        popover.innerHTML = `<span class="text-amber-300 font-bold">${token.pinyin}</span> <br><span class="text-xs text-gray-200">${token.en}</span>`;
+                        span.appendChild(popover);
+                    }
+
+                    container.appendChild(span);
+                }
+            });
+        }
+
+        // Speak full story
+        function speakFullStory() {
+            playSound('click');
+            const fullText = STORY_TOKENS.map(t => t.text).join('');
+            speakText(fullText);
+        }
+
+        // Start 5-Minute Memory Challenge Timer
+        function startMemoryChallenge() {
+            playSound('correct');
+            gameStage = 1;
+
+            document.getElementById('start-btn').classList.add('hidden');
+            document.getElementById('skip-to-reconstruct-btn').classList.remove('hidden');
+            document.getElementById('stage-guidance').innerHTML = `
+                <i class="fa-solid fa-eye text-orange-500 text-lg"></i>
+                <span>【第1阶段：记忆阶段】仔细观察记忆！每过1分钟，关键词汇会流失潜入右侧的大水缸中...</span>
+            `;
+
+            remainingSeconds = 300; // 5 minutes
+            updateCountdownDisplay();
+
+            clearInterval(countdownTimerId);
+            countdownTimerId = setInterval(() => {
+                remainingSeconds--;
+                updateCountdownDisplay();
+
+                // Trigger word vanish every 60 seconds (at 240s, 180s, 120s, 60s)
+                if (remainingSeconds % 60 === 0 && remainingSeconds > 0) {
+                    vanishBatchOfWords();
+                }
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(countdownTimerId);
+                    startReconstructionStage();
+                }
+            }, 1000);
+        }
+
+        function updateCountdownDisplay() {
+            const mins = Math.floor(remainingSeconds / 60);
+            const secs = remainingSeconds % 60;
+            document.getElementById('countdown-timer').innerText = 
+                `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        // Vanish a batch of key words into water jar
+        function vanishBatchOfWords() {
+            const keyTokensNotVanished = STORY_TOKENS.filter(t => t.isKey && !t.isVanished);
+            if (keyTokensNotVanished.length === 0) return;
+
+            // Target to leave roughly ~30% in place by end of 5 mins
+            const numToVanish = Math.ceil(keyTokensNotVanished.length * 0.35);
+            
+            // Randomly select tokens to vanish
+            const shuffled = [...keyTokensNotVanished].sort(() => 0.5 - Math.random());
+            const selectedToVanish = shuffled.slice(0, numToVanish);
+
+            selectedToVanish.forEach(token => {
+                token.isVanished = true;
+                vanishedTokensList.push(token);
+            });
+
+            playSound('splash');
+            renderStoryParagraph();
+            renderWaterJarContents();
+        }
+
+        // Skip immediately to reconstruction stage
+        function skipToReconstruction() {
+            playSound('click');
+            clearInterval(countdownTimerId);
+            
+            // Vanish all key words (~70% of key words into jar)
+            const allKeyTokens = STORY_TOKENS.filter(t => t.isKey);
+            const targetVanishCount = Math.floor(allKeyTokens.length * 0.7);
+            
+            vanishedTokensList = [];
+            STORY_TOKENS.forEach(t => t.isVanished = false);
+
+            const shuffledKey = [...allKeyTokens].sort(() => 0.5 - Math.random());
+            const selected = shuffledKey.slice(0, targetVanishCount);
+
+            selected.forEach(token => {
+                token.isVanished = true;
+                vanishedTokensList.push(token);
+            });
+
+            startReconstructionStage();
+        }
+
+        // Start Stage 2 (Reconstruction Stage)
+        function startReconstructionStage() {
+            gameStage = 2;
+            playSound('victory');
+
+            document.getElementById('skip-to-reconstruct-btn').classList.add('hidden');
+            document.getElementById('submit-reconstruct-box').classList.remove('hidden');
+
+            document.getElementById('timer-label').innerText = "拼词复原倒计时";
+            document.getElementById('stage-guidance').innerHTML = `
+                <i class="fa-solid fa-puzzle-piece text-emerald-600 text-lg"></i>
+                <span class="text-emerald-800">【第2阶段：拼词填空】请将右侧大水缸中的词语拖拽（或点击）还原到对应的句子空位中！</span>
+            `;
+
+            // Reset 5-minute timer for reconstruction
+            remainingSeconds = 300;
+            updateCountdownDisplay();
+
+            clearInterval(countdownTimerId);
+            countdownTimerId = setInterval(() => {
+                remainingSeconds--;
+                updateCountdownDisplay();
+                if (remainingSeconds <= 0) {
+                    clearInterval(countdownTimerId);
+                    checkReconstructionResult();
+                }
+            }, 1000);
+
+            renderStoryParagraph();
+            renderWaterJarContents();
+        }
+
+        // Render Water Jar Side Panel Chips
+        function renderWaterJarContents() {
+            const jarContainer = document.getElementById('water-jar-drop-area');
+            const countLabel = document.getElementById('jar-count');
+            
+            // Filter tokens in jar that have not been placed in slots
+            const availableInJar = vanishedTokensList.filter(vt => !STORY_TOKENS.some(st => st.userFilledId === vt.id));
+
+            countLabel.innerText = `${availableInJar.length} 词`;
+            jarContainer.innerHTML = '';
+
+            if (availableInJar.length === 0) {
+                jarContainer.innerHTML = `
+                    <div id="jar-empty-tip" class="w-full text-center text-white/90 py-10 text-base font-bold italic">
+                        🎉 水缸里的词语已全部取出！<br><span class="text-xs font-normal">点击提交按钮校验成绩吧！</span>
+                    </div>
+                `;
+                return;
+            }
+
+            // Shuffle chip order for fun
+            const shuffledChips = [...availableInJar].sort((a, b) => a.text.localeCompare(b.text));
+
+            shuffledChips.forEach(token => {
+                const chip = document.createElement('div');
+                chip.className = 'jar-word-chip animate-pop';
+                chip.draggable = true;
+                chip.innerHTML = `<i class="fa-solid fa-droplet text-xs text-sky-400"></i> ${token.text}`;
+                
+                // Drag events
+                chip.ondragstart = (e) => {
+                    currentDragTokenId = token.id;
+                    e.dataTransfer.setData('text/plain', token.id);
+                };
+
+                // Click event for tap-to-select support
+                chip.onclick = () => handleJarChipTap(token);
+
+                jarContainer.appendChild(chip);
+            });
+        }
+
+        // Tap chip to fill into first empty slot automatically
+        function handleJarChipTap(token) {
+            playSound('click');
+            const emptySlot = STORY_TOKENS.find(t => t.isVanished && !t.userFilledId);
+            if (emptySlot) {
+                emptySlot.userFilledId = token.id;
+                renderStoryParagraph();
+                renderWaterJarContents();
+            }
+        }
+
+        // Handle Slot Drag Events
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDropOnSlot(e, slotTokenId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            const draggedId = parseInt(e.dataTransfer.getData('text/plain') || currentDragTokenId);
+            if (!draggedId) return;
+
+            const targetToken = STORY_TOKENS.find(t => t.id === slotTokenId);
+            if (targetToken) {
+                targetToken.userFilledId = draggedId;
+                playSound('splash');
+                renderStoryParagraph();
+                renderWaterJarContents();
+            }
+        }
+
+        // Click on filled slot to return token back to water jar
+        function handleSlotClick(slotTokenId) {
+            const targetToken = STORY_TOKENS.find(t => t.id === slotTokenId);
+            if (targetToken && targetToken.userFilledId) {
+                playSound('click');
+                targetToken.userFilledId = null;
+                renderStoryParagraph();
+                renderWaterJarContents();
+            }
+        }
+
+        // Check Task 1 Reconstruction Result
+        function checkReconstructionResult() {
+            clearInterval(countdownTimerId);
+            
+            const vanishedCount = STORY_TOKENS.filter(t => t.isVanished).length;
+            if (vanishedCount === 0) {
+                task1Score = 50;
+            } else {
+                let correctPlacements = 0;
+                STORY_TOKENS.forEach(t => {
+                    if (t.isVanished && t.userFilledId === t.id) {
+                        correctPlacements++;
+                    }
+                });
+                
+                const accuracyRatio = correctPlacements / vanishedCount;
+                const timeBonus = Math.floor(remainingSeconds / 6); // Max ~50 pts bonus
+                task1Score = Math.min(50, Math.round(accuracyRatio * 40 + (timeBonus > 10 ? 10 : timeBonus)));
+            }
+
+            updateScoreUI();
+
+            if (task1Score >= 35) {
+                playSound('correct');
+                alert(`🎉 太棒啦！填空关卡得分：${task1Score}分！自动解锁关卡2看图选句！`);
+            } else {
+                playSound('wrong');
+                alert(`👍 填空关卡得分：${task1Score}分，再接再厉哦！接力挑战关卡2！`);
+            }
+
+            switchTab(2);
+        }
+
+        /* ================= PAGE 2: TASK 2 (看图选句判断) LOGIC ================= */
+
+        function renderTask2QuizCards() {
+            const container = document.getElementById('quiz-cards-container');
+            container.innerHTML = '';
+
+            TASK2_QUIZ_ITEMS.forEach((quiz, index) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-3xl p-5 border-3 border-amber-200 shadow-md flex flex-col md:flex-row gap-5 items-center';
+                
+                // Shuffle options
+                const shuffledOptions = [...quiz.options].sort(() => 0.5 - Math.random());
+
+                card.innerHTML = `
+                    <!-- Image Box -->
+                    <div class="w-full md:w-5/12 h-52 sm:h-60 rounded-2xl overflow-hidden border-4 border-amber-300 shadow-inner bg-amber-50 flex-shrink-0 relative group">
+                        <img src="${quiz.img}" alt="Story Scene ${index + 1}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        <div class="absolute top-2 left-2 bg-amber-500 text-white font-fredoka font-bold text-xs px-3 py-1 rounded-full shadow">
+                            场景 ${index + 1}
+                        </div>
+                    </div>
+
+                    <!-- Options Box -->
+                    <div class="w-full md:w-7/12 flex flex-col gap-3">
+                        <h4 class="text-lg font-bold text-gray-700 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-question text-amber-500"></i> 请选择描写该画面的正确句子：
+                        </h4>
+                        <div id="options-group-${quiz.id}" class="space-y-2.5">
+                            ${shuffledOptions.map(opt => `
+                                <button onclick="selectOption(${quiz.id}, '${opt.replace(/'/g, "\\'")}')" 
+                                        class="option-btn w-full text-left p-3.5 rounded-2xl text-sm sm:text-base font-semibold text-gray-700 flex items-center justify-between">
+                                    <span>${opt}</span>
+                                    <i class="fa-regular fa-circle-check text-amber-400 text-lg opacity-40"></i>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function selectOption(quizId, chosenSentence) {
+            const quiz = TASK2_QUIZ_ITEMS.find(q => q.id === quizId);
+            const optionsGroup = document.getElementById(`options-group-${quizId}`);
+            
+            if (chosenSentence === quiz.correctSentence) {
+                playSound('correct');
+                // Lock options for this card
+                const buttons = optionsGroup.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.innerText.includes(quiz.correctSentence)) {
+                        btn.className = "w-full text-left p-3.5 rounded-2xl text-sm sm:text-base font-bold text-white bg-emerald-500 border-3 border-emerald-600 shadow-md flex items-center justify-between";
+                        btn.innerHTML = `<span>${quiz.correctSentence}</span> <i class="fa-solid fa-circle-check text-white text-xl"></i>`;
+                    }
+                });
+
+                task2Score += 8.33; // 6 questions sum up to ~50 points
+                task2AnsweredCount++;
+                updateScoreUI();
+
+                // Show Positive Feedback Modal
+                showReactionModal(
+                    true,
+                    "https://i.ibb.co.com/v6pq8qzz/image.png",
+                    "太棒了！选对啦！",
+                    "理解非常透彻！得分 +8.3 分！"
+                );
+
+            } else {
+                playSound('wrong');
+                // Show Negative Feedback Modal
+                showReactionModal(
+                    false,
+                    "https://i.ibb.co.com/jPG0TvDR/image.png",
+                    "再想想哦！答案不对",
+                    "没关系，仔细观察图片细节，再试一次吧！"
+                );
+            }
+
+            // Check if all answered
+            if (task2AnsweredCount >= TASK2_QUIZ_ITEMS.length) {
+                setTimeout(() => {
+                    showFinalVictoryModal();
+                }, 1200);
+            }
+        }
+
+        /* ================= REACTION MODAL & VICTORY MODAL ================= */
+
+        function showReactionModal(isCorrect, imgSrc, title, desc) {
+            const modal = document.getElementById('reaction-modal');
+            const badge = document.getElementById('modal-badge');
+            const img = document.getElementById('modal-reaction-img');
+            const titleEl = document.getElementById('modal-title');
+            const descEl = document.getElementById('modal-desc');
+
+            img.src = imgSrc;
+            titleEl.innerText = title;
+            descEl.innerText = desc;
+
+            if (isCorrect) {
+                badge.className = "inline-block px-4 py-1.5 rounded-full text-white font-bold text-sm mb-3 bg-emerald-500 shadow animate-bounce-slow";
+                badge.innerText = "✨ 判断正确！";
+            } else {
+                badge.className = "inline-block px-4 py-1.5 rounded-full text-white font-bold text-sm mb-3 bg-rose-500 shadow animate-wiggle";
+                badge.innerText = "💪 继续加油！";
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeReactionModal() {
+            playSound('click');
+            document.getElementById('reaction-modal').classList.add('hidden');
+        }
+
+        function updateScoreUI() {
+            totalScore = Math.min(100, Math.round(task1Score + task2Score));
+            document.getElementById('total-score').innerText = totalScore;
+
+            // Update Stars
+            const starsContainer = document.getElementById('stars-display');
+            if (totalScore >= 85) {
+                starsContainer.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>`;
+            } else if (totalScore >= 50) {
+                starsContainer.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>`;
+            } else {
+                starsContainer.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>`;
+            }
+        }
+
+        function showFinalVictoryModal() {
+            playSound('victory');
+            const victoryModal = document.getElementById('victory-modal');
+            const scoreDisplay = document.getElementById('final-modal-score');
+            const starsDisplay = document.getElementById('final-modal-stars');
+            const evalText = document.getElementById('final-evaluation-text');
+
+            scoreDisplay.innerText = totalScore;
+
+            if (totalScore >= 85) {
+                starsDisplay.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>`;
+                evalText.innerText = "🌟 小神童！不仅记性棒，看图复述更是满分！";
+            } else if (totalScore >= 60) {
+                starsDisplay.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>`;
+                evalText.innerText = "🎉 非常出色！故事主线掌握得非常牢固！";
+            } else {
+                starsDisplay.innerHTML = `<i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>`;
+                evalText.innerText = "👍 勇士出征！再玩一次冲刺更高的星级吧！";
+            }
+
+            victoryModal.classList.remove('hidden');
+        }
+
+        function closeVictoryModal() {
+            playSound('click');
+            document.getElementById('victory-modal').classList.add('hidden');
+        }
+
+        function resetWholeGame() {
+            playSound('click');
+            totalScore = 0;
+            task1Score = 0;
+            task2Score = 0;
+            task2AnsweredCount = 0;
+            gameStage = 0;
+            vanishedTokensList = [];
+            
+            clearInterval(countdownTimerId);
+            STORY_TOKENS.forEach(t => {
+                t.isVanished = false;
+                t.userFilledId = null;
+            });
+
+            document.getElementById('start-btn').classList.remove('hidden');
+            document.getElementById('skip-to-reconstruct-btn').classList.add('hidden');
+            document.getElementById('submit-reconstruct-box').classList.add('hidden');
+            document.getElementById('countdown-timer').innerText = "05:00";
+            document.getElementById('timer-label').innerText = "准备状态";
+
+            document.getElementById('stage-guidance').innerHTML = `
+                <i class="fa-solid fa-circle-info text-amber-500 text-lg"></i>
+                <span>按“开始挑战”启动倒计时！词语会每分钟逐渐消失入水缸，考考你的记忆力！</span>
+            `;
+
+            closeVictoryModal();
+            renderStoryParagraph();
+            renderWaterJarContents();
+            renderTask2QuizCards();
+            updateScoreUI();
+            switchTab(1);
+        }
+    </script>
+</body>
+</html>
