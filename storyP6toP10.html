@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿文的小毯子 - 汉语绘本互动朗读</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        storybook: {
+                            bg: '#FFFDF0',
+                            card: '#FFFFFF',
+                            primary: '#FF6B6B',
+                            secondary: '#4ECDC4',
+                            accent: '#FFE66D',
+                            dark: '#2D3436',
+                            highlight: '#FF9F43'
+                        }
+                    },
+                    fontFamily: {
+                        kuaile: ['"ZCOOL KuaiLe"', 'cursive', 'sans-serif'],
+                        sans: ['Nunito', 'PingFang SC', 'Microsoft YaHei', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F5EC;
+            background-image: radial-gradient(#E5DDC8 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            font-family: 'Nunito', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            user-select: none;
+        }
+
+        /* 拼音排版优化 */
+        ruby {
+            ruby-position: over;
+            margin: 0 4px;
+            display: inline-flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            vertical-align: bottom;
+        }
+
+        rt {
+            font-size: 0.95rem;
+            color: #718096;
+            font-weight: 600;
+            line-height: 1.2;
+            margin-bottom: 2px;
+            font-family: 'Nunito', sans-serif;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .hide-pinyin rt {
+            opacity: 0 !important;
+            transform: translateY(4px);
+            pointer-events: none;
+        }
+
+        /* 逐字朗读高亮状态 */
+        .char-box {
+            display: inline-block;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 2px 4px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .char-box.read-success {
+            color: #FF5252;
+            background-color: #FFEAA7;
+            transform: scale(1.18);
+            text-shadow: 0 2px 4px rgba(255, 82, 82, 0.2);
+            font-weight: 800;
+        }
+
+        .char-box.read-success rt {
+            color: #D63031;
+            font-weight: 800;
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F1F1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E0;
+            border-radius: 10px;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(255, 107, 107, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+        }
+
+        .mic-active {
+            animation: pulse-ring 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800 flex flex-col justify-between p-2 sm:p-4">
+
+    <!-- 顶部导航与控制栏 -->
+    <header class="max-w-4xl w-full mx-auto bg-white/90 backdrop-blur-md rounded-2xl p-3 sm:p-4 shadow-sm border-2 border-amber-100 flex justify-between items-center z-20 sticky top-2">
+        <!-- 左侧：标题与玩家积分 -->
+        <div class="flex items-center gap-3">
+            <div class="bg-amber-100 p-2 rounded-xl text-amber-600 text-xl font-bold flex items-center justify-center w-10 h-10 shadow-inner">
+                <i class="fa-solid fa-book-open"></i>
+            </div>
+            <div>
+                <h1 class="font-kuaile text-lg sm:text-2xl text-gray-800 tracking-wide">阿文的小毯子</h1>
+                <div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-amber-600">
+                    <span class="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        <i class="fa-solid fa-star text-amber-400"></i> <span id="total-stars">0</span>
+                    </span>
+                    <span class="flex items-center gap-1 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 text-rose-500">
+                        <i class="fa-solid fa-trophy"></i> <span id="total-score">0</span> 分
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：拼音显隐开关控制区 -->
+        <div class="flex items-center gap-3">
+            <label for="pinyin-toggle" class="flex items-center cursor-pointer select-none bg-amber-50 hover:bg-amber-100/80 px-3 py-1.5 rounded-xl border border-amber-200 transition">
+                <span class="text-xs sm:text-sm font-bold text-gray-700 mr-2 flex items-center gap-1">
+                    <i class="fa-solid fa-font text-amber-500"></i> 拼音显示
+                </span>
+                <div class="relative">
+                    <input type="checkbox" id="pinyin-toggle" class="sr-only" checked onchange="togglePinyin(this.checked)">
+                    <div class="w-11 h-6 bg-amber-400 rounded-full shadow-inner transition-colors duration-300 toggle-bg"></div>
+                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow-md transition-transform duration-300 transform translate-x-5"></div>
+                </div>
+            </label>
+        </div>
+    </header>
+
+    <!-- 主体容器 -->
+    <main class="max-w-4xl w-full mx-auto my-3 sm:my-6 flex-1 flex flex-col justify-center">
+
+        <!-- 封面视图 (Cover Screen) -->
+        <div id="screen-cover" class="bg-white rounded-3xl p-4 sm:p-8 shadow-xl border-4 border-amber-200/60 flex flex-col md:flex-row items-center gap-6 sm:gap-8 transition-all">
+            <div class="w-full md:w-1/2 overflow-hidden rounded-2xl shadow-md border-2 border-amber-100 group relative">
+                <img src="https://i.ibb.co.com/Kx9tmkKk/image.jpg" alt="绘本封面" class="w-full h-auto object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://placehold.co/600x600/FFEAA7/D63031?text=阿文的小毯子'">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition duration-300 flex items-end p-4">
+                    <span class="text-white text-sm font-bold"><i class="fa-solid fa-magnifying-glass"></i> 准备好一起朗读了吗？</span>
+                </div>
+            </div>
+            <div class="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left space-y-4">
+                <span class="bg-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full text-xs sm:text-sm tracking-wider">
+                    <i class="fa-solid fa-child-reaching"></i> 儿童汉语互动绘本
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-kuaile text-gray-800 leading-tight">
+                    《阿文的小毯子》
+                </h2>
+                <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                    欢迎来到互动朗读世界！在这里，你可以边听声音、边看拼音朗读大声念出来。只要发音准确，字字都会闪耀变色哦！
+                </p>
+
+                <!-- 模式选择按钮 -->
+            <div class="w-full pt-4 flex flex-col gap-3">
+                <button onclick="startBookRead(0)" class="w-full py-4 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition flex items-center justify-center gap-2 text-lg">
+                    <i class="fa-solid fa-circle-play text-xl"></i> 开始第六页朗读
+                </button>
+                <button onclick="startBookRead(0); startChallengeDirectly();" class="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-base">
+                    <i class="fa-solid fa-bolt text-yellow-300"></i> 无拼音朗读挑战关卡
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 朗读视图 (Page Reading Screen: 支持单图与夹心双图布局) -->
+    <div id="screen-read" class="hidden bg-white rounded-3xl p-4 sm:p-6 shadow-xl border-4 border-amber-200/60 flex flex-col gap-6">
+        
+        <!-- 页码及模式指示牌 -->
+        <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+            <div class="flex items-center gap-2">
+                <button onclick="switchScreen('cover')" class="text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg text-sm font-bold flex items-center gap-1 transition">
+                    <i class="fa-solid fa-chevron-left"></i> 返回封面
+                </button>
+                <span id="mode-badge" class="bg-teal-100 text-teal-700 font-bold text-xs px-2.5 py-1 rounded-full">
+                    <i class="fa-solid fa-book-reader"></i> 跟着读模式
+                </span>
+            </div>
+            
+            <!-- 翻页控制与页码指示 -->
+            <div class="flex items-center gap-2">
+                <button id="btn-prev-page" onclick="changePage(-1)" class="w-9 h-9 rounded-full bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 text-amber-600 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-left text-sm"></i>
+                </button>
+                <div class="text-gray-500 text-xs sm:text-sm font-bold px-2">
+                    第 <span id="current-page-num" class="text-rose-500 font-extrabold text-lg">6</span> / <span id="total-page-num" class="font-extrabold">10</span> 页
+                </div>
+                <button id="btn-next-page" onclick="changePage(1)" class="w-9 h-9 rounded-full bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 text-amber-600 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-right text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 布局类型 1：单图侧边排版 (Side Layout) -->
+        <div id="page-layout-side" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <div class="lg:col-span-6 flex justify-center">
+                <div class="relative rounded-2xl overflow-hidden shadow-lg border-2 border-amber-100 w-full max-w-md transform hover:scale-[1.02] transition duration-300">
+                    <img id="side-layout-img" src="" alt="插图" class="w-full h-auto object-cover" onerror="this.src='https://placehold.co/600x600/FFEAA7/2D3436?text=绘本插图'">
+                </div>
+            </div>
+            <div class="lg:col-span-6 flex flex-col justify-between space-y-6">
+                <div class="bg-amber-50/60 rounded-2xl p-4 sm:p-6 border-2 border-amber-100 min-h-[160px] flex items-center justify-center">
+                    <div id="story-text-container-side" class="story-text-target text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed tracking-wide text-gray-700 flex flex-wrap gap-y-6 justify-center md:justify-start"></div>
+                </div>
+                <div class="controls-panel"></div>
+            </div>
+        </div>
+
+        <!-- 布局类型 2：夹心双图排版 (Stacked Layout) -->
+        <div id="page-layout-stacked" class="hidden flex flex-col items-center gap-6">
+            <div class="w-full max-w-md overflow-hidden rounded-2xl shadow-lg border-2 border-amber-100 transform hover:scale-[1.02] transition duration-300">
+                <img id="stacked-top-img" src="" alt="上插图" class="w-full h-auto object-cover" onerror="this.src='https://placehold.co/600x300/FFEAA7/2D3436?text=上部分插图'">
+            </div>
+            <div class="w-full bg-amber-50/60 rounded-2xl p-4 sm:p-6 border-2 border-amber-100 min-h-[120px] flex items-center justify-center">
+                <div id="story-text-container-stacked" class="story-text-target text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed tracking-wide text-gray-700 flex flex-wrap gap-y-6 justify-center"></div>
+            </div>
+            <div class="w-full max-w-md overflow-hidden rounded-2xl shadow-lg border-2 border-amber-100 transform hover:scale-[1.02] transition duration-300">
+                <img id="stacked-bottom-img" src="" alt="下插图" class="w-full h-auto object-cover" onerror="this.src='https://placehold.co/600x300/FFEAA7/2D3436?text=下部分插图'">
+            </div>
+            <div class="w-full controls-panel mt-2"></div>
+        </div>
+
+        <!-- 底部无拼音挑战条 -->
+        <div id="challenge-banner" class="mt-2 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl p-4 border-2 border-teal-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-teal-500 text-white p-3 rounded-xl shadow-md">
+                    <i class="fa-solid fa-trophy text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800 text-base">读完了？挑战无拼音关卡！</h3>
+                    <p class="text-xs text-gray-500">隐藏拼音独立朗读，测测准确率获取 3 颗星！</p>
+                </div>
+            </div>
+            <button onclick="startChallengeMode()" class="w-full sm:w-auto px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 whitespace-nowrap">
+                <span>进入无拼音朗读挑战</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+</main>
+
+    <!-- 控制面板复用模版 -->
+    <template id="controls-template">
+        <div class="space-y-4">
+            <!-- 朗读进度条 -->
+            <div class="space-y-1">
+                <div class="flex justify-between text-xs font-bold text-gray-500">
+                    <span>朗读进度</span>
+                    <span class="progress-text">0 / 0 字</span>
+                </div>
+                <div class="w-full bg-gray-100 h-3 rounded-full overflow-hidden p-0.5 border border-gray-200">
+                    <div class="progress-bar bg-gradient-to-r from-amber-400 to-rose-500 h-full rounded-full w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <!-- 语音跟读交互按钮群 -->
+            <div class="flex flex-wrap gap-2 sm:gap-3 justify-center md:justify-start">
+                <button id="btn-mic" onclick="toggleSpeechRecognition()" class="btn-mic flex-1 min-w-[140px] py-3 px-4 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-microphone text-lg mic-icon" id="mic-icon"></i>
+                    <span class="mic-btn-text" id="mic-btn-text">开始语音跟读</span>
+                </button>
+
+                <button onclick="playAudioDemo()" class="py-3 px-4 bg-amber-400 hover:bg-amber-500 text-gray-800 font-bold rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-volume-high"></i>
+                    <span>听示范读</span>
+                </button>
+
+                <button onclick="simulateReading()" class="py-3 px-3 bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 font-bold rounded-xl transition flex items-center justify-center gap-1.5 text-xs sm:text-sm" title="测试自动演示逐字变色">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>模拟跟读</span>
+                </button>
+
+                <button onclick="resetReading()" class="py-3 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition" title="重置">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- 结算弹窗 modal -->
+    <div id="modal-result" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 text-center space-y-6 shadow-2xl border-4 border-amber-300 transform transition-all scale-95 opacity-0 modal-box">
+            
+            <div class="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner border-2 border-amber-200">
+                <i class="fa-solid fa-award"></i>
+            </div>
+
+            <div>
+                <h3 class="text-2xl font-kuaile text-gray-800 mb-1" id="result-title">挑战完成！</h3>
+                <p class="text-sm text-gray-500" id="result-subtitle">你真棒！顺利完成了无拼音朗读测验</p>
+            </div>
+
+            <!-- 星级展示 -->
+            <div class="flex justify-center gap-2 text-3xl text-amber-400" id="result-stars">
+                <i class="fa-solid fa-star transition duration-300 transform hover:scale-125"></i>
+                <i class="fa-solid fa-star transition duration-300 transform hover:scale-125"></i>
+                <i class="fa-solid fa-star transition duration-300 transform hover:scale-125"></i>
+            </div>
+
+            <!-- 数据得分框 -->
+            <div class="grid grid-cols-2 gap-3 bg-amber-50/60 p-4 rounded-2xl border border-amber-200">
+                <div class="text-center">
+                    <div class="text-xs text-gray-500 font-bold">发音准确率</div>
+                    <div class="text-2xl font-black text-rose-500 mt-0.5" id="result-accuracy">0%</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-gray-500 font-bold">获得积分</div>
+                    <div class="text-2xl font-black text-teal-600 mt-0.5" id="result-score">+0</div>
+                </div>
+            </div>
+
+            <div id="result-feedback" class="text-sm font-bold text-teal-700 bg-teal-50 py-2 rounded-xl border border-teal-100">
+                "读得太清晰了，简直是小播音员！"
+            </div>
+
+            <!-- 弹窗按钮 -->
+            <div class="flex gap-3">
+                <button onclick="closeModal(); resetReading();" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition">
+                    再试一次
+                </button>
+                <button id="btn-next-step" onclick="handleNextStep()" class="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-1">
+                    <span>进入下一页</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚提示 -->
+    <footer class="max-w-4xl w-full mx-auto text-center py-3 text-xs text-gray-400">
+        <p>汉语绘本互动朗读平台 &copy; 2026 - 鼓励孩子大声开口读中文</p>
+    </footer>
+
+    <!-- JavaScript 逻辑驱动 -->
+    <script>
+        // 多页故事文本数据结构（升级为第6页至第10页）
+        const pagesData = [
+            // 第六页 (图一)
+            {
+                pageNumber: 6,
+                layout: 'side',
+                image: 'https://iili.io/nbmfCIn.md.jpg',
+                words: [
+                    { char: "睡", pinyin: "shuì" },
+                    { char: "觉", pinyin: "jiào" },
+                    { char: "前", pinyin: "qián" },
+                    { char: "，", pinyin: "", isPunctuation: true },
+                    { char: "阿", pinyin: "ā" },
+                    { char: "文", pinyin: "wén" },
+                    { char: "却", pinyin: "què" },
+                    { char: "把", pinyin: "bǎ" },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "塞", pinyin: "sāi" },
+                    { char: "进", pinyin: "jìn" },
+                    { char: "了", pinyin: "le" },
+                    { char: "裤", pinyin: "kù" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "里", pinyin: "lǐ" },
+                    { char: "。", pinyin: "", isPunctuation: true }
+                ]
+            },
+            // 第七页 (图二)
+            {
+                pageNumber: 7,
+                layout: 'side',
+                image: 'https://iili.io/nbmqhF4.md.jpg',
+                words: [
+                    { char: "第", pinyin: "dì" },
+                    { char: "二", pinyin: "èr" },
+                    { char: "天", pinyin: "tiān" },
+                    { char: "早", pinyin: "zǎo" },
+                    { char: "上", pinyin: "shang" },
+                    { char: "，", pinyin: "", isPunctuation: true },
+                    { char: "阿", pinyin: "ā" },
+                    { char: "文", pinyin: "wén" },
+                    { char: "拿", pinyin: "ná" },
+                    { char: "出", pinyin: "chū" },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "说", pinyin: "shuō" },
+                    { char: "：", pinyin: "", isPunctuation: true },
+                    { char: "“", pinyin: "", isPunctuation: true },
+                    { char: "根", pinyin: "gēn" },
+                    { char: "本", pinyin: "běn" },
+                    { char: "没", pinyin: "méi" },
+                    { char: "有", pinyin: "yǒu" },
+                    { char: "毛", pinyin: "máo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "精", pinyin: "jīng" },
+                    { char: "灵", pinyin: "líng" },
+                    { char: "。", pinyin: "", isPunctuation: true },
+                    { char: "”", pinyin: "", isPunctuation: true },
+                    { char: "妈", pinyin: "mā" },
+                    { char: "妈", pinyin: "ma" },
+                    { char: "说", pinyin: "shuō" },
+                    { char: "：", pinyin: "", isPunctuation: true },
+                    { char: "“", pinyin: "", isPunctuation: true },
+                    { char: "天", pinyin: "tiān" },
+                    { char: "哪", pinyin: "na" },
+                    { char: "！", pinyin: "", isPunctuation: true },
+                    { char: "你", pinyin: "nǐ" },
+                    { char: "怎", pinyin: "zěn" },
+                    { char: "么", pinyin: "me" },
+                    { char: "把", pinyin: "bǎ" },
+                    { char: "毛", pinyin: "máo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "塞", pinyin: "sāi" },
+                    { char: "在", pinyin: "zài" },
+                    { char: "裤", pinyin: "kù" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "里", pinyin: "lǐ" },
+                    { char: "？", pinyin: "", isPunctuation: true },
+                    { char: "”", pinyin: "", isPunctuation: true },
+                    { char: "爸", pinyin: "bà" },
+                    { char: "爸", pinyin: "ba" },
+                    { char: "说", pinyin: "shuō" },
+                    { char: "：", pinyin: "", isPunctuation: true },
+                    { char: "“", pinyin: "", isPunctuation: true },
+                    { char: "难", pinyin: "nán" },
+                    { char: "怪", pinyin: "guài" },
+                    { char: "…", pinyin: "", isPunctuation: true },
+                    { char: "…", pinyin: "", isPunctuation: true },
+                    { char: "”", pinyin: "", isPunctuation: true }
+                ]
+            },
+            // 第八页 (图三)
+            {
+                pageNumber: 8,
+                layout: 'side',
+                image: 'https://iili.io/nbmoEJ4.md.jpg',
+                words: [
+                    { char: "妈", pinyin: "mā" },
+                    { char: "妈", pinyin: "ma" },
+                    { char: "说", pinyin: "shuō" },
+                    { char: "：", pinyin: "", isPunctuation: true },
+                    { char: "“", pinyin: "", isPunctuation: true },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "好", pinyin: "hǎo" },
+                    { char: "脏", pinyin: "zāng" },
+                    { char: "。", pinyin: "", isPunctuation: true },
+                    { char: "”", pinyin: "", isPunctuation: true },
+                    { char: "爸", pinyin: "bà" },
+                    { char: "爸", pinyin: "ba" },
+                    { char: "说", pinyin: "shuō" },
+                    { char: "：", pinyin: "", isPunctuation: true },
+                    { char: "“", pinyin: "", isPunctuation: true },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "又", pinyin: "yòu" },
+                    { char: "破", pinyin: "pò" },
+                    { char: "又", pinyin: "yòu" },
+                    { char: "旧", pinyin: "jiù" },
+                    { char: "，", pinyin: "", isPunctuation: true },
+                    { char: "丢", pinyin: "diū" },
+                    { char: "掉", pinyin: "diào" },
+                    { char: "算", pinyin: "suàn" },
+                    { char: "了", pinyin: "le" },
+                    { char: "。", pinyin: "", isPunctuation: true },
+                    { char: "”", pinyin: "", isPunctuation: true },
+                    { char: "阿", pinyin: "ā" },
+                    { char: "文", pinyin: "wén" },
+                    { char: "不", pinyin: "bù" },
+                    { char: "肯", pinyin: "kěn" },
+                    { char: "，", pinyin: "", isPunctuation: true },
+                    { char: "他", pinyin: "tā" },
+                    { char: "说", pinyin: "shuō" },
+                    { char: "：", pinyin: "", isPunctuation: true },
+                    { char: "“", pinyin: "", isPunctuation: true },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "很", pinyin: "hěn" },
+                    { char: "好", pinyin: "hǎo" },
+                    { char: "啊", pinyin: "a" },
+                    { char: "！", pinyin: "", isPunctuation: true },
+                    { char: "”", pinyin: "", isPunctuation: true }
+                ]
+            },
+            // 第九页 (图四，夹心双图布局)
+            {
+                pageNumber: 9,
+                layout: 'stacked',
+                topImage: 'https://iili.io/nbmm9Dl.md.jpg',
+                bottomImage: 'https://iili.io/nbmyoMB.md.jpg',
+                words: [
+                    { char: "“", pinyin: "", isPunctuation: true },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "可", pinyin: "kě" },
+                    { char: "以", pinyin: "yǐ" },
+                    { char: "当", pinyin: "dāng" },
+                    { char: "披", pinyin: "pī" },
+                    { char: "风", pinyin: "fēng" },
+                    { char: "…", pinyin: "", isPunctuation: true },
+                    { char: "…", pinyin: "", isPunctuation: true },
+                    { char: "”", pinyin: "", isPunctuation: true },
+                    { char: "“", pinyin: "", isPunctuation: true },
+                    { char: "我", pinyin: "wǒ" },
+                    { char: "可", pinyin: "kě" },
+                    { char: "以", pinyin: "yǐ" },
+                    { char: "躲", pinyin: "duǒ" },
+                    { char: "在", pinyin: "zài" },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "里", pinyin: "lǐ" },
+                    { char: "面", pinyin: "miàn" },
+                    { char: "，", pinyin: "", isPunctuation: true },
+                    { char: "你", pinyin: "nǐ" },
+                    { char: "们", pinyin: "men" },
+                    { char: "都", pinyin: "dōu" },
+                    { char: "找", pinyin: "zhǎo" },
+                    { char: "不", pinyin: "bu" },
+                    { char: "到", pinyin: "dào" },
+                    { char: "我", pinyin: "wǒ" },
+                    { char: "。", pinyin: "", isPunctuation: true },
+                    { char: "”", pinyin: "", isPunctuation: true }
+                ]
+            },
+            // 第十页 (图五)
+            {
+                pageNumber: 10,
+                layout: 'side',
+                image: 'https://iili.io/nbmIdJf.md.jpg',
+                words: [
+                    { char: "阿", pinyin: "ā" },
+                    { char: "文", pinyin: "wén" },
+                    { char: "剪", pinyin: "jiǎn" },
+                    { char: "头", pinyin: "tóu" },
+                    { char: "发", pinyin: "fa" },
+                    { char: "，", pinyin: "", isPunctuation: true },
+                    { char: "看", pinyin: "kàn" },
+                    { char: "牙", pinyin: "yá" },
+                    { char: "齿", pinyin: "chǐ" },
+                    { char: "的", pinyin: "de" },
+                    { char: "时", pinyin: "shí" },
+                    { char: "候", pinyin: "hòu" },
+                    { char: "，", pinyin: "", isPunctuation: true },
+                    { char: "都", pinyin: "dōu" },
+                    { char: "把", pinyin: "bǎ" },
+                    { char: "小", pinyin: "xiǎo" },
+                    { char: "毯", pinyin: "tǎn" },
+                    { char: "子", pinyin: "zi" },
+                    { char: "带", pinyin: "dài" },
+                    { char: "在", pinyin: "zài" },
+                    { char: "身", pinyin: "shēn" },
+                    { char: "边", pinyin: "biān" },
+                    { char: "。", pinyin: "", isPunctuation: true }
+                ]
+            }
+        ];
+
+        // 全局状态管理
+        let currentPageIndex = 0;
+        let isPinyinVisible = true;
+        let isRecording = false;
+        let isChallengeMode = false;
+        let storyData = pagesData[0].words;
+        let readStatus = [];
+        let currentIndexToRead = 0;
+        let recognition = null;
+        let totalStars = 0;
+        let totalScore = 0;
+        let simInterval = null;
+
+        // 音效引擎 (Web Audio API)
+        const AudioFX = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playPop() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            },
+            playSuccess() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.3);
+                });
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const totalPageSpan = document.getElementById('total-page-num');
+            if (totalPageSpan) totalPageSpan.innerText = "10";
+            initSpeechRecognition();
+        });
+
+        function startBookRead(pageIdx) {
+            switchScreen('read');
+            goToPage(pageIdx);
+        }
+
+        // 切换到特定页码 (映射 0 -> 第6页 ... 4 -> 第10页)
+        function goToPage(pageIdx) {
+            if (pageIdx < 0 || pageIdx >= pagesData.length) return;
+
+            if (isRecording) stopSpeechRecognition();
+            if (simInterval) clearInterval(simInterval);
+
+            currentPageIndex = pageIdx;
+            const pageConfig = pagesData[currentPageIndex];
+            storyData = pageConfig.words;
+            readStatus = new Array(storyData.length).fill(false);
+            currentIndexToRead = 0;
+
+            // 更新页码指示器 (显示真实页码 6~10)
+            const curPageSpan = document.getElementById('current-page-num');
+            const totalPageSpan = document.getElementById('total-page-num');
+            const prevBtn = document.getElementById('btn-prev-page');
+            const nextBtn = document.getElementById('btn-next-page');
+            
+            if (curPageSpan) curPageSpan.innerText = pageConfig.pageNumber;
+            if (totalPageSpan) totalPageSpan.innerText = "10";
+            if (prevBtn) prevBtn.disabled = (currentPageIndex === 0);
+            if (nextBtn) nextBtn.disabled = (currentPageIndex === pagesData.length - 1);
+
+            // 切换布局 DOM
+            const sideLayout = document.getElementById('page-layout-side');
+            const stackedLayout = document.getElementById('page-layout-stacked');
+
+            if (pageConfig.layout === 'side') {
+                document.getElementById('side-layout-img').src = pageConfig.image;
+                sideLayout.classList.remove('hidden');
+                stackedLayout.classList.add('hidden');
+                injectControls('page-layout-side');
+                renderPageText('story-text-container-side');
+            } else if (pageConfig.layout === 'stacked') {
+                document.getElementById('stacked-top-img').src = pageConfig.topImage;
+                document.getElementById('stacked-bottom-img').src = pageConfig.bottomImage;
+                sideLayout.classList.add('hidden');
+                stackedLayout.classList.remove('hidden');
+                injectControls('page-layout-stacked');
+                renderPageText('story-text-container-stacked');
+            }
+
+            advanceToNextNonPunctuation();
+            togglePinyin(isPinyinVisible);
+        }
+
+        function changePage(delta) {
+            goToPage(currentPageIndex + delta);
+        }
+
+        // 动态注入控制面板
+        function injectControls(containerId) {
+            const container = document.getElementById(containerId);
+            const controlsPanel = container.querySelector('.controls-panel');
+            const template = document.getElementById('controls-template');
+            controlsPanel.innerHTML = '';
+            controlsPanel.appendChild(template.content.cloneNode(true));
+        }
+
+        // 渲染文本节点
+        function renderPageText(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            storyData.forEach((item, index) => {
+                if (item.isPunctuation) {
+                    const span = document.createElement('span');
+                    span.className = 'text-gray-400 mx-0.5 select-none font-sans';
+                    span.innerText = item.char;
+                    container.appendChild(span);
+                } else {
+                    const rubyNode = document.createElement('ruby');
+                    rubyNode.className = `char-box id-char-${index}`;
+                    rubyNode.onclick = () => manualReadChar(index);
+
+                    const charSpan = document.createElement('span');
+                    charSpan.innerText = item.char;
+                    charSpan.className = 'char-text';
+
+                    const rtNode = document.createElement('rt');
+                    rtNode.innerText = item.pinyin;
+
+                    rubyNode.appendChild(charSpan);
+                    rubyNode.appendChild(rtNode);
+                    container.appendChild(rubyNode);
+                }
+            });
+
+            updateProgressUI();
+        }
+
+        // 切换拼音显示
+        function togglePinyin(show) {
+            isPinyinVisible = show;
+            const targets = document.querySelectorAll('.story-text-target');
+            const toggleBg = document.querySelector('.toggle-bg');
+            const dot = document.querySelector('.dot');
+
+            targets.forEach(target => {
+                if (show) {
+                    target.classList.remove('hide-pinyin');
+                } else {
+                    target.classList.add('hide-pinyin');
+                }
+            });
+
+            if (toggleBg && dot) {
+                if (show) {
+                    toggleBg.classList.replace('bg-gray-300', 'bg-amber-400');
+                    dot.classList.add('translate-x-5');
+                } else {
+                    toggleBg.classList.replace('bg-amber-400', 'bg-gray-300');
+                    dot.classList.remove('translate-x-5');
+                }
+            }
+            AudioFX.playPop();
+        }
+
+        function switchScreen(screenName) {
+            document.getElementById('screen-cover').classList.add('hidden');
+            document.getElementById('screen-read').classList.add('hidden');
+
+            if (screenName === 'cover') {
+                document.getElementById('screen-cover').classList.remove('hidden');
+            } else if (screenName === 'read') {
+                document.getElementById('screen-read').classList.remove('hidden');
+                isChallengeMode = false;
+                document.getElementById('mode-badge').className = "bg-teal-100 text-teal-700 font-bold text-xs px-2.5 py-1 rounded-full";
+                document.getElementById('mode-badge').innerHTML = `<i class="fa-solid fa-book-reader"></i> 跟着读模式`;
+            }
+        }
+
+        function manualReadChar(index) {
+            if (storyData[index].isPunctuation) return;
+            markCharAsRead(index);
+            speakText(storyData[index].char);
+        }
+
+        function markCharAsRead(index) {
+            if (index < 0 || index >= storyData.length || storyData[index].isPunctuation) return;
+            
+            if (!readStatus[index]) {
+                readStatus[index] = true;
+                const el = document.querySelectorAll(`.id-char-${index}`);
+                el.forEach(e => e.classList.add('read-success'));
+
+                AudioFX.playPop();
+                
+                if (index >= currentIndexToRead) {
+                    currentIndexToRead = index + 1;
+                    advanceToNextNonPunctuation();
+                }
+
+                updateProgressUI();
+            }
+        }
+
+        function advanceToNextNonPunctuation() {
+            while (currentIndexToRead < storyData.length && storyData[currentIndexToRead].isPunctuation) {
+                currentIndexToRead++;
+            }
+        }
+
+        function resetReading() {
+            if (simInterval) clearInterval(simInterval);
+            readStatus = new Array(storyData.length).fill(false);
+            currentIndexToRead = 0;
+            advanceToNextNonPunctuation();
+            document.querySelectorAll('.char-box').forEach(el => {
+                el.classList.remove('read-success');
+            });
+            updateProgressUI();
+            if (isRecording) stopSpeechRecognition();
+        }
+
+        // 识别兼容（包含“他/她/它”同音替换）
+        function isCharMatching(targetChar, speechChar) {
+            if (targetChar === speechChar) return true;
+            const taGroup = ['他', '她', '它'];
+            if (taGroup.includes(targetChar) && taGroup.includes(speechChar)) {
+                return true;
+            }
+            return false;
+        }
+
+        function processSpeechResult(transcript) {
+            const cleanedSpeech = transcript.replace(/[^\u4e00-\u9fa5]/g, '');
+            if (!cleanedSpeech) return;
+
+            for (let i = 0; i < cleanedSpeech.length; i++) {
+                const spokenChar = cleanedSpeech[i];
+
+                advanceToNextNonPunctuation();
+                if (currentIndexToRead >= storyData.length) break;
+
+                const targetChar = storyData[currentIndexToRead].char;
+
+                if (isCharMatching(targetChar, spokenChar)) {
+                    markCharAsRead(currentIndexToRead);
+                }
+            }
+        }
+
+        function updateProgressUI() {
+            const totalChars = storyData.filter(item => !item.isPunctuation).length;
+            const readChars = readStatus.filter(Boolean).length;
+            const percentage = Math.round((readChars / totalChars) * 100);
+
+            const activeLayoutId = pagesData[currentPageIndex].layout === 'side' ? 'page-layout-side' : 'page-layout-stacked';
+            const activeLayout = document.getElementById(activeLayoutId);
+
+            const progressBar = activeLayout.querySelector('.progress-bar');
+            const progressText = activeLayout.querySelector('.progress-text');
+            if (progressBar) progressBar.style.width = `${percentage}%`;
+            if (progressText) progressText.innerText = `${readChars} / ${totalChars} 字`;
+
+            if (readChars === totalChars && totalChars > 0) {
+                setTimeout(() => {
+                    if (isChallengeMode) {
+                        finishChallenge();
+                    } else {
+                        AudioFX.playSuccess();
+                    }
+                }, 400);
+            }
+        }
+
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                console.warn("当前浏览器不支持 Web Speech API。");
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+
+            recognition.onresult = (event) => {
+                let currentTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    currentTranscript += event.results[i][0].transcript;
+                }
+                processSpeechResult(currentTranscript);
+            };
+
+            recognition.onerror = (event) => {
+                console.error("语音识别错误:", event.error);
+                if (event.error !== 'no-speech') {
+                    stopSpeechRecognition();
+                }
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        stopSpeechRecognition();
+                    }
+                }
+            };
+        }
+
+        function toggleSpeechRecognition() {
+            if (isRecording) {
+                stopSpeechRecognition();
+            } else {
+                startSpeechRecognition();
+            }
+        }
+
+        function startSpeechRecognition() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+
+            if (!recognition) {
+                alert("您的浏览器暂不支持实时语音识别，请点击【模拟跟读】测试效果！");
+                return;
+            }
+
+            try {
+                recognition.start();
+                isRecording = true;
+                
+                document.querySelectorAll('.btn-mic').forEach(btn => btn.classList.add('mic-active', 'bg-red-600'));
+                document.querySelectorAll('.mic-btn-text').forEach(t => t.innerText = '正在录音跟读中...');
+                document.querySelectorAll('.mic-icon').forEach(icon => icon.className = 'fa-solid fa-microphone-lines text-lg animate-bounce mic-icon');
+                AudioFX.playPop();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function stopSpeechRecognition() {
+            if (recognition && isRecording) {
+                isRecording = false;
+                try {
+                    recognition.stop();
+                } catch(e) {}
+            }
+            document.querySelectorAll('.btn-mic').forEach(btn => btn.classList.remove('mic-active', 'bg-red-600'));
+            document.querySelectorAll('.mic-btn-text').forEach(t => t.innerText = '开始语音跟读');
+            document.querySelectorAll('.mic-icon').forEach(icon => icon.className = 'fa-solid fa-microphone text-lg mic-icon');
+        }
+
+        function playAudioDemo() {
+            const fullText = storyData.map(i => i.char).join('');
+            speakText(fullText);
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function simulateReading() {
+            resetReading();
+            if (simInterval) clearInterval(simInterval);
+
+            simInterval = setInterval(() => {
+                advanceToNextNonPunctuation();
+
+                if (currentIndexToRead < storyData.length) {
+                    markCharAsRead(currentIndexToRead);
+                } else {
+                    clearInterval(simInterval);
+                }
+            }, 300);
+        }
+
+        function startChallengeMode() {
+            isChallengeMode = true;
+            resetReading();
+            
+            const toggleInput = document.getElementById('pinyin-toggle');
+            if (toggleInput) toggleInput.checked = false;
+            togglePinyin(false);
+
+            document.getElementById('mode-badge').className = "bg-rose-100 text-rose-700 font-bold text-xs px-2.5 py-1 rounded-full animate-pulse";
+            document.getElementById('mode-badge').innerHTML = `<i class="fa-solid fa-bolt"></i> 无拼音朗读挑战中`;
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function startChallengeDirectly() {
+            switchScreen('read');
+            startChallengeMode();
+        }
+
+        function finishChallenge() {
+            if (isRecording) stopSpeechRecognition();
+            AudioFX.playSuccess();
+
+            const accuracy = 100;
+            const stars = 3;
+            const scoreGained = 150;
+
+            totalStars += stars;
+            totalScore += scoreGained;
+            document.getElementById('total-stars').innerText = totalStars;
+            document.getElementById('total-score').innerText = totalScore;
+
+            document.getElementById('result-accuracy').innerText = `${accuracy}%`;
+            document.getElementById('result-score').innerText = `+${scoreGained}`;
+
+            // 更新结算弹窗按钮状态
+            const nextBtn = document.getElementById('btn-next-step');
+            if (nextBtn) {
+                if (currentPageIndex < pagesData.length - 1) {
+                    const nextPageNum = pagesData[currentPageIndex + 1].pageNumber;
+                    nextBtn.innerHTML = `<span>进入第 ${nextPageNum} 页</span> <i class="fa-solid fa-arrow-right"></i>`;
+                } else {
+                    nextBtn.innerHTML = `<span>通关全书！返回首页</span> <i class="fa-solid fa-house"></i>`;
+                }
+            }
+
+            const modal = document.getElementById('modal-result');
+            const modalBox = modal.querySelector('.modal-box');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalBox.classList.remove('scale-95', 'opacity-0');
+                modalBox.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        // 处理结算后的下一步
+        function handleNextStep() {
+            closeModal();
+            if (currentPageIndex < pagesData.length - 1) {
+                goToPage(currentPageIndex + 1);
+            } else {
+                switchScreen('cover');
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal-result');
+            const modalBox = modal.querySelector('.modal-box');
+            modalBox.classList.remove('scale-100', 'opacity-100');
+            modalBox.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+    </script>
+</body>
+</html>
