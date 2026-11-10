@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《阿文的小毯子》图句翻翻卡游戏</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #fef6e4 0%, #f3d2c1 100%);
+            min-height: 100vh;
+        }
+
+        .ruby-text {
+            ruby-position: over;
+            font-size: 1.15rem;
+            line-height: 2.2rem;
+        }
+        rt {
+            font-size: 0.75rem;
+            color: #d97706;
+            font-weight: 500;
+            font-family: sans-serif;
+        }
+
+        /* 3D Card Flip Effects */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        /* Shimmer Animation */
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.95; transform: scale(1.02); }
+        }
+        .pulse-btn {
+            animation: pulse-subtle 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col justify-between min-h-screen">
+
+    <!-- Header Section -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-amber-200/50 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid font-bold text-xl">📖</i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-amber-900 tracking-wide">阿文的小毯子</h1>
+                    <p class="text-xs text-amber-700">图与句故事翻翻卡大挑战</p>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="flex items-center space-x-2 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200">
+                <span class="text-xs font-bold text-amber-800">关卡进度:</span>
+                <div class="flex space-x-1.5" id="progress-dots">
+                    <!-- Dynamic Dots -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 py-6 flex-1 flex flex-col justify-center items-center w-full">
+
+        <!-- Status & Controls Banner -->
+        <div class="w-full bg-white/90 rounded-2xl p-4 shadow-lg border border-amber-100 mb-6 backdrop-blur-sm">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                
+                <!-- Story Audio Player Box -->
+                <div class="flex-1 w-full bg-amber-50/80 p-3 rounded-xl border border-amber-200/60 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <button id="read-story-btn" onclick="playCurrentStoryAudio()" class="pulse-btn bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md flex items-center space-x-2 transition active:scale-95">
+                            <i class="fa-solid fa-volume-high text-lg" id="audio-icon"></i>
+                            <span id="read-btn-text">播放故事段落</span>
+                        </button>
+                        <span class="text-xs text-amber-700 hidden sm:inline"><i class="fa-solid fa-circle-info mr-1"></i>仔细听段落顺序哦</span>
+                    </div>
+
+                    <div class="text-right">
+                        <span id="stage-badge" class="px-3 py-1 bg-amber-200 text-amber-900 rounded-lg text-xs font-bold">
+                            第 1 / 5 轮
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Game Stats -->
+                <div class="flex items-center space-x-4 shrink-0">
+                    <!-- Timer -->
+                    <div class="flex items-center space-x-2 bg-rose-50 border border-rose-200 px-3 py-2 rounded-xl">
+                        <i class="fa-solid fa-clock text-rose-500 text-lg"></i>
+                        <div>
+                            <div class="text-[10px] text-rose-400 font-bold uppercase leading-none">剩余时间</div>
+                            <div id="timer-display" class="text-lg font-bold text-rose-600 leading-none mt-0.5">30s</div>
+                        </div>
+                    </div>
+
+                    <!-- Strike Counter (Mistakes) -->
+                    <div class="flex items-center space-x-2 bg-indigo-50 border border-indigo-200 px-3 py-2 rounded-xl">
+                        <i class="fa-solid fa-triangle-exclamation text-indigo-500 text-lg"></i>
+                        <div>
+                            <div class="text-[10px] text-indigo-400 font-bold uppercase leading-none">词卡错误</div>
+                            <div id="strike-display" class="text-lg font-bold text-indigo-600 leading-none mt-0.5">0 / 3</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Stage Instruction Banner -->
+            <div id="instruction-box" class="mt-3 py-2 px-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-900 text-sm font-semibold flex items-center justify-between">
+                <span><i class="fa-solid fa-bullhorn text-blue-500 mr-2"></i><span id="instruction-text">请先听段落，然后在下方翻开卡片找到对应的故事图画！</span></span>
+                <div class="flex items-center space-x-2">
+                    <button id="next-round-btn" onclick="proceedToNextRound()" class="hidden bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow-md transition active:scale-95 animate-pulse">
+                        下一题 <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                    <span id="phase-badge" class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-md font-normal">阶段一：寻找图卡</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards Playing Grid Area -->
+        <div id="cards-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full min-h-[360px] justify-items-center">
+            <!-- Dynamic Cards Rendered Here -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs text-amber-800/60 font-medium">
+        《阿文的小毯子》故事双关翻翻卡 · 助你轻松记故事
+    </footer>
+
+    <!-- Game Reset Alert Modal -->
+    <div id="reset-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full mx-4 shadow-2xl text-center transform scale-90 transition-transform duration-300" id="reset-modal-content">
+            <div class="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border-4 border-rose-50">
+                <i class="fa-solid fa-rotate-left"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">翻错超过3次啦！</h3>
+            <p class="text-slate-600 text-sm mb-6">
+                太可惜了！词卡翻错次数达到3次上限，需要重新寻找本轮的故事图卡哦！加油！
+            </p>
+            <button onclick="restartCurrentRound()" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-2xl shadow-lg shadow-rose-200 transition active:scale-95">
+                重新本轮挑战
+            </button>
+        </div>
+    </div>
+
+    <!-- Time Out Alert Modal -->
+    <div id="timeout-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full mx-4 shadow-2xl text-center transform scale-90 transition-transform duration-300" id="timeout-modal-content">
+            <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border-4 border-amber-50">
+                <i class="fa-solid fa-hourglass-end"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">时间到啦！</h3>
+            <p class="text-slate-600 text-sm mb-6">
+                规定时间内没有找到对应的卡片，别灰心，再听一遍故事重新挑战吧！
+            </p>
+            <button onclick="restartCurrentRound()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-2xl shadow-lg shadow-amber-200 transition active:scale-95">
+                重新试一次
+            </button>
+        </div>
+    </div>
+
+    <!-- Victory Celebration Overlay Modal -->
+    <div id="victory-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-500">
+        <div class="bg-white/95 rounded-3xl p-8 max-w-lg w-full mx-4 shadow-2xl text-center border-4 border-amber-300 transform scale-90 transition-transform duration-300 relative overflow-hidden">
+            <!-- Decorative elements -->
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-amber-200 rounded-full blur-2xl opacity-50"></div>
+            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-orange-200 rounded-full blur-2xl opacity-50"></div>
+
+            <div class="w-24 h-24 bg-gradient-to-tr from-amber-400 to-yellow-300 text-white rounded-full flex items-center justify-center text-5xl mx-auto mb-4 shadow-xl shadow-amber-200 border-4 border-white animate-bounce">
+                👑
+            </div>
+
+            <!-- Victory Pinyin Header -->
+            <div class="mb-4">
+                <div class="text-xs text-amber-600 font-semibold tracking-widest uppercase">Gōng xǐ nǐ! Tài bàng le!</div>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-amber-900 mt-1">恭喜你！太棒了！</h2>
+            </div>
+
+            <!-- Victory Story Pinyin Content Box -->
+            <div class="bg-amber-50/80 p-4 rounded-2xl border border-amber-200 mb-6 text-left space-y-2">
+                <p class="ruby-text font-bold text-amber-900 text-center">
+                    <ruby>你<rt>nǐ</rt></ruby><ruby>完<rt>wán</rt></ruby><ruby>美<rt>měi</rt></ruby><ruby>通<rt>tōng</rt></ruby><ruby>关<rt>guān</rt></ruby><ruby>了<rt>le</rt></ruby>《<ruby>阿<rt>ā</rt></ruby><ruby>文<rt>wén</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>小<rt>xiǎo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>子<rt>zi</rt></ruby>》<ruby>故<rt>gù</rt></ruby><ruby>事<rt>shì</rt></ruby><ruby>大<rt>dà</rt></ruby><ruby>挑<rt>tiāo</rt></ruby><ruby>战<rt>zhàn</rt></ruby>！
+                </p>
+                <p class="text-xs text-amber-700 text-center mt-2">
+                    你不仅认准了所有的生动画面，还战胜了所有没有拼音的书本难题！太了不起了！
+                </p>
+            </div>
+
+            <button onclick="resetWholeGame()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3.5 rounded-2xl shadow-xl shadow-amber-300 transition active:scale-95 text-lg">
+                <i class="fa-solid fa-rotate-right mr-2"></i>再玩一次故事挑战
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Game Story Data with Ruby HTML for Pinyin ---
+        const STORY_DATA = [
+            {
+                id: 1,
+                image: "https://i.ibb.co.com/N6kCB0Pf/image.jpg",
+                text: "阿文有一条黄色的小毯子，当他还是小宝宝的时候，他就有着条小毯子，阿文非常喜欢它。",
+                pinyinRuby: `
+                    <ruby>阿<rt>ā</rt></ruby><ruby>文<rt>wén</rt></ruby><ruby>有<rt>yǒu</rt></ruby><ruby>一<rt>yī</rt></ruby><ruby>条<rt>tiáo</rt></ruby><ruby>黄<rt>huáng</rt></ruby><ruby>色<rt>sè</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>小<rt>xiǎo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>子<rt>zi</rt></ruby>，
+                    <ruby>当<rt>dāng</rt></ruby><ruby>他<rt>tā</rt></ruby><ruby>还<rt>hái</rt></ruby><ruby>是<rt>shì</rt></ruby><ruby>小<rt>xiǎo</rt></ruby><ruby>宝<rt>bǎo</rt></ruby><ruby>宝<rt>bao</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>时<rt>shí</rt></ruby><ruby>候<rt>hòu</rt></ruby>，
+                    <ruby>他<rt>tā</rt></ruby><ruby>就<rt>jiù</rt></ruby><ruby>有<rt>yǒu</rt></ruby><ruby>这<rt>zhè</rt></ruby><ruby>条<rt>tiáo</rt></ruby><ruby>小<rt>xiǎo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>子<rt>zi</rt></ruby>，
+                    <ruby>阿<rt>ā</rt></ruby><ruby>文<rt>wén</rt></ruby><ruby>非<rt>fēi</rt></ruby><ruby>常<rt>cháng</rt></ruby><ruby>喜<rt>xǐ</rt></ruby><ruby>欢<rt>huān</rt></ruby><ruby>它<rt>tā</rt></ruby>。
+                `
+            },
+            {
+                id: 2,
+                image: "https://iili.io/nbyHps4.md.jpg",
+                text: "不管是上楼梯、下楼梯，或者是在家里、在外面，阿文总是说：“我去哪里，小毯子就跟我去哪里。”",
+                pinyinRuby: `
+                    <ruby>不<rt>bù</rt></ruby><ruby>管<rt>guǎn</rt></ruby><ruby>是<rt>shì</rt></ruby><ruby>上<rt>shàng</rt></ruby><ruby>楼<rt>lóu</rt></ruby><ruby>梯<rt>tī</rt></ruby>、
+                    <ruby>下<rt>xià</rt></ruby><ruby>楼<rt>lóu</rt></ruby><ruby>梯<rt>tī</rt></ruby>，
+                    <ruby>或<rt>huò</rt></ruby><ruby>者<rt>zhě</rt></ruby><ruby>是<rt>shì</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>家<rt>jiā</rt></ruby><ruby>里<rt>lǐ</rt></ruby>、
+                    <ruby>在<rt>zài</rt></ruby><ruby>外<rt>wài</rt></ruby><ruby>面<rt>miàn</rt></ruby>，
+                    <ruby>阿<rt>ā</rt></ruby><ruby>文<rt>wén</rt></ruby><ruby>总<rt>zǒng</rt></ruby><ruby>是<rt>shì</rt></ruby><ruby>说<rt>shuō</rt></ruby>：“
+                    <ruby>我<rt>wǒ</rt></ruby><ruby>去<rt>qù</rt></ruby><ruby>哪<rt>nǎ</rt></ruby><ruby>里<rt>lǐ</rt></ruby>，
+                    <ruby>小<rt>xiǎo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>子<rt>zi</rt></ruby><ruby>就<rt>jiù</rt></ruby><ruby>跟<rt>gēn</rt></ruby><ruby>我<rt>wǒ</rt></ruby><ruby>去<rt>qù</rt></ruby><ruby>哪<rt>nǎ</rt></ruby><ruby>里<rt>lǐ</rt></ruby>。”
+                `
+            },
+            {
+                id: 3,
+                image: "https://i.ibb.co.com/jkd7yw7L/image.jpg",
+                text: "不管是橘子汁、葡萄汁、巧克力、牛奶，或者是冰淇淋、花生酱、苹果酱、蛋糕，阿文总是说：“我喜欢的东西，小毯子都喜欢。”",
+                pinyinRuby: `
+                    <ruby>不<rt>bù</rt></ruby><ruby>管<rt>guǎn</rt></ruby><ruby>是<rt>shì</rt></ruby><ruby>橘<rt>jú</rt></ruby><ruby>子<rt>zi</rt></ruby><ruby>汁<rt>zhī</rt></ruby>、
+                    <ruby>葡<rt>pú</rt></ruby><ruby>萄<rt>táo</rt></ruby><ruby>汁<rt>zhī</rt></ruby>、
+                    <ruby>巧<rt>qiǎo</rt></ruby><ruby>克<rt>kè</rt></ruby><ruby>力<rt>lì</rt></ruby>、
+                    <ruby>牛<rt>niú</rt></ruby><ruby>奶<rt>nǎi</rt></ruby>，
+                    <ruby>或<rt>huò</rt></ruby><ruby>者<rt>zhě</rt></ruby><ruby>是<rt>shì</rt></ruby><ruby>冰<rt>bīng</rt></ruby><ruby>淇<rt>qí</rt></ruby><ruby>淋<rt>lín</rt></ruby>、
+                    <ruby>花<rt>huā</rt></ruby><ruby>生<rt>shēng</rt></ruby><ruby>酱<rt>jiàng</rt></ruby>、
+                    <ruby>苹<rt>píng</rt></ruby><ruby>果<rt>guǒ</rt></ruby><ruby>酱<rt>jiàng</rt></ruby>、
+                    <ruby>蛋<rt>dàn</rt></ruby><ruby>糕<rt>gāo</rt></ruby>，
+                    <ruby>阿<rt>ā</rt></ruby><ruby>文<rt>wén</rt></ruby><ruby>总<rt>zǒng</rt></ruby><ruby>是<rt>shì</rt></ruby><ruby>说<rt>shuō</rt></ruby>：“
+                    <ruby>我<rt>wǒ</rt></ruby><ruby>喜<rt>xǐ</rt></ruby><ruby>欢<rt>huān</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>东<rt>dōng</rt></ruby><ruby>西<rt>xī</rt></ruby>，
+                    <ruby>小<rt>xiǎo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>子<rt>zi</rt></ruby><ruby>都<rt>dōu</rt></ruby><ruby>喜<rt>xǐ</rt></ruby><ruby>欢<rt>huān</rt></ruby>。”
+                `
+            },
+            {
+                id: 4,
+                image: "https://i.ibb.co.com/FL4yDmbG/image.jpg",
+                text: "隔壁的阿姨忍不住说话了：“阿文长大了，怎么还带着毯子到处走呢？你们没有听说过毛毯小精灵的故事吗？”阿文的爸爸妈妈摇摇头。“来，我说给你们听，再教你们怎么做。”",
+                pinyinRuby: `
+                    <ruby>隔<rt>gé</rt></ruby><ruby>壁<rt>bì</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>阿<rt>ā</rt></ruby><ruby>姨<rt>yí</rt></ruby><ruby>忍<rt>rěn</rt></ruby><ruby>不<rt>bù</rt></ruby><ruby>住<rt>zhù</rt></ruby><ruby>说<rt>shuō</rt></ruby><ruby>话<rt>huà</rt></ruby><ruby>了<rt>le</rt></ruby>：“
+                    <ruby>阿<rt>ā</rt></ruby><ruby>文<rt>wén</rt></ruby><ruby>长<rt>zhǎng</rt></ruby><ruby>大<rt>dà</rt></ruby><ruby>了<rt>le</rt></ruby>，
+                    <ruby>怎<rt>zěn</rt></ruby><ruby>么<rt>me</rt></ruby><ruby>还<rt>hái</rt></ruby><ruby>带<rt>dài</rt></ruby><ruby>着<rt>zhe</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>子<rt>zi</rt></ruby><ruby>到<rt>dào</rt></ruby><ruby>处<rt>chù</rt></ruby><ruby>走<rt>zǒu</rt></ruby><ruby>呢<rt>ne</rt></ruby>？
+                    <ruby>你<rt>nǐ</rt></ruby><ruby>们<rt>men</rt></ruby><ruby>没<rt>méi</rt></ruby><ruby>有<rt>yǒu</rt></ruby><ruby>听<rt>tīng</rt></ruby><ruby>说<rt>shuō</rt></ruby><ruby>过<rt>guò</rt></ruby><ruby>毛<rt>máo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>小<rt>xiǎo</rt></ruby><ruby>精<rt>jīng</rt></ruby><ruby>灵<rt>líng</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>故<rt>gù</rt></ruby><ruby>事<rt>shì</rt></ruby><ruby>吗<rt>ma</rt></ruby>？”
+                    <ruby>阿<rt>ā</rt></ruby><ruby>文<rt>wén</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>爸<rt>bà</rt></ruby><ruby>爸<rt>ba</rt></ruby><ruby>妈<rt>mā</rt></ruby><ruby>妈<rt>ma</rt></ruby><ruby>摇<rt>yáo</rt></ruby><ruby>摇<rt>yáo</rt></ruby><ruby>头<rt>tóu</rt></ruby>。“
+                    <ruby>来<rt>lái</rt></ruby>，<ruby>我<rt>wǒ</rt></ruby><ruby>说<rt>shuō</rt></ruby><ruby>给<rt>gěi</rt></ruby><ruby>你<rt>nǐ</rt></ruby><ruby>们<rt>men</rt></ruby><ruby>听<rt>tīng</rt></ruby>，
+                    <ruby>再<rt>zài</rt></ruby><ruby>教<rt>jiāo</rt></ruby><ruby>你<rt>nǐ</rt></ruby><ruby>们<rt>men</rt></ruby><ruby>怎<rt>zěn</rt></ruby><ruby>么<rt>me</rt></ruby><ruby>做<rt>zuò</rt></ruby>。”
+                `
+            },
+            {
+                id: 5,
+                image: "https://i.ibb.co.com/4nbMMZWp/image.jpg",
+                text: "这天晚上，爸爸告诉阿文：“如果你把小毯子放在枕头下，明天早上，小毯子就不见了，但是毛毯小精灵会留给你一个非常棒的礼物。”妈妈说：“是男孩子最喜欢的玩具噢！”",
+                pinyinRuby: `
+                    <ruby>这<rt>zhè</rt></ruby><ruby>天<rt>tiān</rt></ruby><ruby>晚<rt>wǎn</rt></ruby><ruby>上<rt>shang</rt></ruby>，
+                    <ruby>爸<rt>bà</rt></ruby><ruby>爸<rt>ba</rt></ruby><ruby>告<rt>gào</rt></ruby><ruby>诉<rt>su</rt></ruby><ruby>阿<rt>ā</rt></ruby><ruby>文<rt>wén</rt></ruby>：“
+                    <ruby>如<rt>rú</rt></ruby><ruby>果<rt>guǒ</rt></ruby><ruby>你<rt>nǐ</rt></ruby><ruby>把<rt>bǎ</rt></ruby><ruby>小<rt>xiǎo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>子<rt>zi</rt></ruby><ruby>放<rt>fàng</rt></ruby><ruby>在<rt>zài</rt></ruby><ruby>枕<rt>zhěn</rt></ruby><ruby>头<rt>tou</rt></ruby><ruby>下<rt>xià</rt></ruby>，
+                    <ruby>明<rt>míng</rt></ruby><ruby>天<rt>tiān</rt></ruby><ruby>早<rt>zǎo</rt></ruby><ruby>上<rt>shang</rt></ruby>，
+                    <ruby>小<rt>xiǎo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>子<rt>zi</rt></ruby><ruby>就<rt>jiù</rt></ruby><ruby>不<rt>bù</rt></ruby><ruby>见<rt>jiàn</rt></ruby><ruby>了<rt>le</rt></ruby>，
+                    <ruby>但<rt>dàn</rt></ruby><ruby>是<rt>shì</rt></ruby><ruby>毛<rt>máo</rt></ruby><ruby>毯<rt>tǎn</rt></ruby><ruby>小<rt>xiǎo</rt></ruby><ruby>精<rt>jīng</rt></ruby><ruby>灵<rt>líng</rt></ruby><ruby>会<rt>huì</rt></ruby><ruby>留<rt>liú</rt></ruby><ruby>给<rt>gěi</rt></ruby><ruby>你<rt>nǐ</rt></ruby><ruby>一<rt>yī</rt></ruby><ruby>个<rt>gè</rt></ruby><ruby>非<rt>fēi</rt></ruby><ruby>常<rt>cháng</rt></ruby><ruby>棒<rt>bàng</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>礼<rt>lǐ</rt></ruby><ruby>物<rt>wù</rt></ruby>。”
+                    <ruby>妈<rt>mā</rt></ruby><ruby>妈<rt>ma</rt></ruby><ruby>说<rt>shuō</rt></ruby>：“
+                    <ruby>是<rt>shì</rt></ruby><ruby>男<rt>nán</rt></ruby><ruby>孩<rt>hái</rt></ruby><ruby>子<rt>zi</rt></ruby><ruby>最<rt>zuì</rt></ruby><ruby>喜<rt>xǐ</rt></ruby><ruby>欢<rt>huān</rt></ruby><ruby>的<rt>de</rt></ruby><ruby>玩<rt>wán</rt></ruby><ruby>具<rt>jù</rt></ruby><ruby>噢<rt>ō</rt></ruby>！”
+                `
+            }
+        ];
+
+        // --- Sound Effects using Web Audio API ---
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playFlip() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+            playSuccess() {
+                this.init();
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.25, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.3);
+                });
+            }
+            playError() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+            playVictory() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [440, 554.37, 659.25, 880, 659.25, 880];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.4);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.4);
+                });
+            }
+        }
+
+        const soundFX = new SoundEffects();
+
+        // --- Game State Variables ---
+        let currentRound = 0; // 0 to 4
+        let currentPhase = 'IMAGE'; // 'IMAGE' or 'TEXT'
+        let textStrikes = 0; // max 3 allowed
+        let timerSeconds = 30;
+        let timerInterval = null;
+        let isProcessingFlip = false;
+        let synth = window.speechSynthesis;
+        let isSpeaking = false;
+
+        // --- Core Game Controllers ---
+
+        // Initialize Application
+        window.onload = function() {
+            renderProgressDots();
+            startRound(0);
+        };
+
+        // Render Top Header Dots
+        function renderProgressDots() {
+            const container = document.getElementById('progress-dots');
+            container.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const dot = document.createElement('div');
+                dot.className = `w-3 h-3 rounded-full transition-all duration-300 ${
+                    i < currentRound 
+                        ? 'bg-emerald-500 shadow-sm scale-110' 
+                        : i === currentRound 
+                            ? 'bg-amber-500 animate-pulse ring-2 ring-amber-300' 
+                            : 'bg-amber-200'
+                }`;
+                container.appendChild(dot);
+            }
+        }
+
+        // Start a Specific Game Round
+        function startRound(roundIdx) {
+            currentRound = roundIdx;
+            currentPhase = 'IMAGE';
+            textStrikes = 0;
+            isProcessingFlip = false;
+
+            updateUIHeader();
+            renderProgressDots();
+            renderCardsGrid();
+
+            // Auto-play audio at stage start
+            setTimeout(() => {
+                playCurrentStoryAudio();
+            }, 400);
+
+            resetTimer(30);
+        }
+
+        // Timer Logic
+        function resetTimer(seconds) {
+            clearInterval(timerInterval);
+            timerSeconds = seconds;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerDisplay();
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('timer-display');
+            timerEl.textContent = `${timerSeconds}s`;
+            if (timerSeconds <= 5) {
+                timerEl.classList.add('animate-ping');
+            } else {
+                timerEl.classList.remove('animate-ping');
+            }
+        }
+
+        function handleTimeout() {
+            soundFX.playError();
+            showModal('timeout-modal');
+        }
+
+        // UI Header Text Update
+        function updateUIHeader() {
+            document.getElementById('stage-badge').textContent = `第 ${currentRound + 1} / 5 轮`;
+            document.getElementById('strike-display').textContent = `${textStrikes} / 3`;
+
+            const instrText = document.getElementById('instruction-text');
+            const phaseBadge = document.getElementById('phase-badge');
+            const nextBtn = document.getElementById('next-round-btn');
+
+            nextBtn.classList.add('hidden');
+
+            if (currentPhase === 'IMAGE') {
+                instrText.textContent = "请听故事语音，翻开卡片找到相符的故事图片！";
+                phaseBadge.textContent = "阶段一：寻找图卡";
+                phaseBadge.className = "text-xs bg-blue-500 text-white px-2 py-0.5 rounded-md font-normal";
+            } else {
+                instrText.textContent = "图片寻对！现在请翻开词卡找到刚才听到的完整段落（翻错限3次内）";
+                phaseBadge.textContent = "阶段二：匹配句卡";
+                phaseBadge.className = "text-xs bg-indigo-500 text-white px-2 py-0.5 rounded-md font-normal";
+            }
+        }
+
+        // Web Speech API - Text to Speech
+        function playCurrentStoryAudio() {
+            if (!synth) return;
+            synth.cancel(); // Stop any ongoing speech
+
+            const textToSpeak = STORY_DATA[currentRound].text;
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.85; // Slightly slower for language learners
+
+            const btnText = document.getElementById('read-btn-text');
+            const audioIcon = document.getElementById('audio-icon');
+
+            utterance.onstart = () => {
+                isSpeaking = true;
+                btnText.textContent = "正在朗读...";
+                audioIcon.className = "fa-solid fa-volume-high animate-bounce";
+            };
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                btnText.textContent = "再次播放故事";
+                audioIcon.className = "fa-solid fa-volume-high";
+            };
+
+            utterance.onerror = () => {
+                isSpeaking = false;
+                btnText.textContent = "播放故事段落";
+                audioIcon.className = "fa-solid fa-volume-high";
+            };
+
+            synth.speak(utterance);
+        }
+
+        // Render Cards Grid
+        function renderCardsGrid() {
+            const grid = document.getElementById('cards-grid');
+            grid.innerHTML = '';
+
+            let cardItems = [];
+
+            if (currentPhase === 'IMAGE') {
+                // Phase 1: 5 Image Cards (1 correct, 4 distractors)
+                cardItems = STORY_DATA.map(item => ({
+                    id: item.id,
+                    type: 'IMAGE',
+                    content: item.image,
+                    isCorrect: item.id === STORY_DATA[currentRound].id
+                }));
+            } else {
+                // Phase 2: 5 Text Cards (1 correct, 4 distractors)
+                cardItems = STORY_DATA.map(item => ({
+                    id: item.id,
+                    type: 'TEXT',
+                    pinyinHTML: item.pinyinRuby,
+                    isCorrect: item.id === STORY_DATA[currentRound].id
+                }));
+            }
+
+            // Shuffle Cards
+            cardItems = shuffleArray(cardItems);
+
+            // Render Card Elements
+            cardItems.forEach((item, idx) => {
+                const cardContainer = document.createElement('div');
+                cardContainer.className = "card perspective-1000 w-full h-48 md:h-56 cursor-pointer select-none";
+                cardContainer.onclick = () => handleCardClick(cardContainer, item);
+
+                const cardInner = document.createElement('div');
+                cardInner.className = "card-inner shadow-lg rounded-2xl";
+
+                // Card Front (Cover Pattern)
+                const cardFront = document.createElement('div');
+                cardFront.className = `card-front bg-gradient-to-br ${
+                    currentPhase === 'IMAGE' ? 'from-amber-400 to-orange-400' : 'from-indigo-400 to-purple-500'
+                } flex flex-col items-center justify-center border-4 border-white text-white p-4`;
+                
+                cardFront.innerHTML = `
+                    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold mb-2 backdrop-blur-sm">
+                        ${currentPhase === 'IMAGE' ? '🖼️' : '📝'}
+                    </div>
+                    <span class="text-xs font-bold tracking-wider opacity-90">卡片 ${idx + 1}</span>
+                    <span class="text-[10px] mt-1 bg-black/10 px-2 py-0.5 rounded-full">点击翻开</span>
+                `;
+
+                // Card Back (Content)
+                const cardBack = document.createElement('div');
+                cardBack.className = "card-back bg-white border-4 border-amber-300 p-3 flex flex-col items-center justify-between overflow-hidden rounded-2xl relative";
+
+                if (item.type === 'IMAGE') {
+                    cardBack.innerHTML = `
+                        <img src="${item.content}" alt="Story Illustration" class="w-full h-full object-cover rounded-xl" onerror="this.src='https://placehold.co/400x300/fef3c7/d97706?text=绘本插图'">
+                    `;
+                } else {
+                    cardBack.innerHTML = `
+                        <div class="w-full h-full overflow-y-auto p-1 flex items-center justify-center text-center pb-8">
+                            <div class="text-slate-800 leading-snug">
+                                ${item.pinyinHTML}
+                            </div>
+                        </div>
+                        <button class="next-btn-card hidden absolute bottom-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow-md transition active:scale-95 animate-bounce z-10" onclick="event.stopPropagation(); proceedToNextRound();">
+                            读完了，下一题 <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    `;
+                }
+
+                cardInner.appendChild(cardFront);
+                cardInner.appendChild(cardBack);
+                cardContainer.appendChild(cardInner);
+                grid.appendChild(cardContainer);
+            });
+        }
+
+        // Card Click Handler
+        function handleCardClick(cardEl, item) {
+            if (isProcessingFlip) return;
+
+            // If card is already flipped, allow toggling back manually in TEXT phase
+            if (cardEl.classList.contains('flipped')) {
+                if (currentPhase === 'TEXT' && !item.isCorrect) {
+                    soundFX.playFlip();
+                    cardEl.classList.remove('flipped');
+                }
+                return;
+            }
+
+            soundFX.playFlip();
+            cardEl.classList.add('flipped');
+
+            if (item.isCorrect) {
+                // CORRECT MATCH!
+                soundFX.playSuccess();
+
+                if (currentPhase === 'IMAGE') {
+                    isProcessingFlip = true;
+                    setTimeout(() => {
+                        currentPhase = 'TEXT';
+                        isProcessingFlip = false;
+                        updateUIHeader();
+                        renderCardsGrid();
+                        resetTimer(45); // Give extra time for text reading
+                    }, 1200);
+                } else {
+                    // CORRECT TEXT CARD FOUND!
+                    // Stop timer so student has infinite time to read
+                    clearInterval(timerInterval);
+
+                    // Show success highlight border
+                    cardEl.querySelector('.card-back').classList.remove('border-amber-300');
+                    cardEl.querySelector('.card-back').classList.add('border-emerald-500', 'ring-4', 'ring-emerald-200');
+
+                    // Reveal Next Round buttons (both on banner and on the card)
+                    document.getElementById('instruction-text').textContent = "回答正确！请仔细朗读卡片文本，读完后点击“下一题”。";
+                    const bannerNextBtn = document.getElementById('next-round-btn');
+                    bannerNextBtn.classList.remove('hidden');
+
+                    const cardNextBtn = cardEl.querySelector('.next-btn-card');
+                    if (cardNextBtn) {
+                        cardNextBtn.classList.remove('hidden');
+                    }
+                }
+
+            } else {
+                // INCORRECT MATCH!
+                soundFX.playError();
+
+                if (currentPhase === 'IMAGE') {
+                    // In IMAGE phase: Automatically flip back after a brief pause so they can quickly try another card
+                    isProcessingFlip = true;
+                    setTimeout(() => {
+                        cardEl.classList.remove('flipped');
+                        isProcessingFlip = false;
+                    }, 1000);
+                } else {
+                    // In TEXT phase: Keep flipped so the student has plenty of time to read!
+                    textStrikes++;
+                    document.getElementById('strike-display').textContent = `${textStrikes} / 3`;
+
+                    if (textStrikes >= 3) {
+                        // Exceeded 3 strikes! Reset round to Phase 1 (Image phase)
+                        clearInterval(timerInterval);
+                        setTimeout(() => {
+                            showModal('reset-modal');
+                        }, 800);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Proceed to Next Round or Final Victory
+        function proceedToNextRound() {
+            if (currentRound < 4) {
+                startRound(currentRound + 1);
+            } else {
+                triggerVictoryCelebration();
+            }
+        }
+
+        // --- Helper Functions & Modals ---
+
+        // Array Shuffle Helper (Fisher-Yates algorithm)
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Restart Current Round
+        function restartCurrentRound() {
+            hideModal('reset-modal');
+            hideModal('timeout-modal');
+            startRound(currentRound);
+        }
+
+        // Reset Entire Game
+        function resetWholeGame() {
+            hideModal('victory-modal');
+            startRound(0);
+        }
+
+        // Show Modal Dialog
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            const content = modal.querySelector('div[id$="-content"]');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                if (content) {
+                    content.classList.remove('scale-90');
+                    content.classList.add('scale-100');
+                }
+            }, 10);
+        }
+
+        // Hide Modal Dialog
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            const content = modal.querySelector('div[id$="-content"]');
+            
+            modal.classList.add('opacity-0');
+            if (content) {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-90');
+            }
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Victory Confetti Celebration
+        function triggerVictoryCelebration() {
+            soundFX.playVictory();
+            showModal('victory-modal');
+
+            // Fire Confetti Blast
+            if (typeof confetti === 'function') {
+                const count = 200;
+                const defaults = { origin: { y: 0.7 } };
+
+                function fire(particleRatio, opts) {
+                    confetti(Object.assign({}, defaults, opts, {
+                        particleCount: Math.floor(count * particleRatio)
+                    }));
+                }
+
+                fire(0.25, { spread: 26, startVelocity: 55, colors: ['#f59e0b', '#ec4899', '#3b82f6'] });
+                fire(0.2, { spread: 60, colors: ['#10b981', '#f59e0b', '#6366f1'] });
+                fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+                fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+                fire(0.1, { spread: 120, startVelocity: 45 });
+            }
+        }
+    </script>
+</body>
+</html>
