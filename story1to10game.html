@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿文的小毯子 - 故事複述彩虹小屋</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        morandi: {
+                            text: '#334155', // 深灰藍文字，避免高明度強烈視覺刺激
+                            yellow: '#FEF08A',
+                            yellowDark: '#CA8A04',
+                            purple: '#F3E8FF',
+                            purpleDark: '#7E22CE',
+                            blue: '#E0F2FE',
+                            blueDark: '#0369A1',
+                            pink: '#FFE4E6',
+                            pinkDark: '#BE123C',
+                            green: '#DCFCE7',
+                            greenDark: '#15803D'
+                        }
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        sans: ['Noto Sans TC', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F8FAF9;
+            background-image: radial-gradient(#CBD5E1 1.2px, transparent 1.2px);
+            background-size: 28px 28px;
+            color: #334155;
+            font-family: 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 莫蘭迪五彩卡片呼吸燈脈衝 */
+        @keyframes pulse-yellow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.5); }
+            50% { box-shadow: 0 0 0 20px rgba(234, 179, 8, 0); }
+        }
+        @keyframes pulse-purple {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.5); }
+            50% { box-shadow: 0 0 0 20px rgba(168, 85, 247, 0); }
+        }
+        @keyframes pulse-blue {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5); }
+            50% { box-shadow: 0 0 0 20px rgba(14, 165, 233, 0); }
+        }
+        @keyframes pulse-pink {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.5); }
+            50% { box-shadow: 0 0 0 20px rgba(244, 63, 94, 0); }
+        }
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+            50% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); }
+        }
+
+        .recording-yellow { animation: pulse-yellow 1.5s infinite; }
+        .recording-purple { animation: pulse-purple 1.5s infinite; }
+        .recording-blue { animation: pulse-blue 1.5s infinite; }
+        .recording-pink { animation: pulse-pink 1.5s infinite; }
+        .recording-green { animation: pulse-green 1.5s infinite; }
+
+        /* 滾動條隱藏與優化 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #94A3B8; border-radius: 10px; }
+
+        /* 專注模式動畫 transition */
+        .focus-transition {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-6">
+
+    <!-- 頂部欄：色彩導覽列與專注模式 toggle -->
+    <header class="max-w-5xl w-full mx-auto bg-white/90 backdrop-blur-md rounded-3xl p-3 sm:p-4 shadow-sm border-2 border-slate-100 flex justify-between items-center z-30 sticky top-2 focus-transition" id="header-nav">
+        <!-- 標題與色彩小屋標誌 -->
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-amber-200 via-sky-200 to-pink-200 flex items-center justify-center text-slate-700 text-xl shadow-inner border border-white">
+                <i class="fa-solid fa-[#FFD700] fa-palette text-amber-500"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg sm:text-2xl text-slate-800 tracking-wide flex items-center gap-2">
+                    《阿文的小毯子》
+                    <span class="text-xs sm:text-sm font-normal px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">複述彩虹小屋</span>
+                </h1>
+                <p class="text-xs text-slate-500 hidden sm:block">專為視覺色彩敏感孩子設計的故事表達遊戲</p>
+            </div>
+        </div>
+
+        <!-- 右側：專注模式切換器與音效控制 -->
+        <div class="flex items-center gap-2 sm:gap-4">
+            <!-- 專注模式（視覺降噪）關卡 switch -->
+            <button id="btn-focus-mode" onclick="toggleFocusMode()" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-2xl border border-slate-200 transition text-xs sm:text-sm font-bold text-slate-700">
+                <i class="fa-solid fa-eye-slash text-slate-500" id="focus-icon"></i>
+                <span id="focus-text" class="hidden sm:inline">專注模式</span>
+            </button>
+
+            <!-- 聽語音重讀按鈕 -->
+            <button onclick="stopTTS()" class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 flex items-center justify-center transition" title="停止語音發音">
+                <i class="fa-solid fa-volume-xmark"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主體內容區 -->
+    <main class="max-w-5xl w-full mx-auto my-4 sm:my-6 flex-1 flex flex-col justify-center">
+
+        <!-- ==================== 1. 歡迎與封面視圖 (Cover View) ==================== -->
+        <div id="view-cover" class="bg-white rounded-3xl p-5 sm:p-10 shadow-xl border-4 border-slate-100 flex flex-col items-center text-center space-y-6 focus-transition">
+            
+            <div class="relative w-full max-w-lg rounded-3xl overflow-hidden shadow-md border-4 border-amber-100 group">
+                <img src="https://i.ibb.co.com/Kx9tmkKk/image.jpg" alt="阿文的小毯子封面" class="w-full h-64 sm:h-80 object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://placehold.co/600x400/FEF08A/334155?text=阿文的小毯子'">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent flex items-end justify-center p-4">
+                    <span class="text-white text-sm font-bold tracking-wider bg-black/40 backdrop-blur-sm px-4 py-1.5 rounded-full border border-white/30">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> 看圖 · 聽音 · 用色彩說故事
+                    </span>
+                </div>
+            </div>
+
+            <!-- 5大色彩關卡預覽條 -->
+            <div class="w-full max-w-2xl space-y-2">
+                <p class="text-xs sm:text-sm font-bold text-slate-500">點亮 5 個故事色彩關卡，幫阿文完成彩虹廣播吧！</p>
+                <div class="grid grid-cols-5 gap-2 sm:gap-3">
+                    <div class="bg-amber-100 border-2 border-amber-300 rounded-2xl p-2.5 flex flex-col items-center">
+                        <span class="text-xl">💛</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-amber-800 mt-1">1. 黃色卡</span>
+                    </div>
+                    <div class="bg-purple-100 border-2 border-purple-300 rounded-2xl p-2.5 flex flex-col items-center">
+                        <span class="text-xl">💜</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-purple-800 mt-1">2. 紫色卡</span>
+                    </div>
+                    <div class="bg-sky-100 border-2 border-sky-300 rounded-2xl p-2.5 flex flex-col items-center">
+                        <span class="text-xl">💙</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-sky-800 mt-1">3. 藍色卡</span>
+                    </div>
+                    <div class="bg-rose-100 border-2 border-rose-300 rounded-2xl p-2.5 flex flex-col items-center">
+                        <span class="text-xl">💗</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-rose-800 mt-1">4. 粉色卡</span>
+                    </div>
+                    <div class="bg-emerald-100 border-2 border-emerald-300 rounded-2xl p-2.5 flex flex-col items-center">
+                        <span class="text-xl">💚</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-emerald-800 mt-1">5. 綠色卡</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 開啟按鈕 -->
+            <button onclick="startStation(0)" class="w-full max-w-md py-4 sm:py-5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition flex items-center justify-center gap-3 border-b-4 border-emerald-700">
+                <i class="fa-solid fa-play text-2xl"></i>
+                <span>開啟彩虹故事旅程</span>
+            </button>
+        </div>
+
+
+        <!-- ==================== 2. 色彩故事關卡視圖 (Station View) ==================== -->
+        <div id="view-station" class="hidden flex-col space-y-4 focus-transition">
+            
+            <!-- 故事結構色彩地圖（專注模式下會被隱藏） -->
+            <div id="station-path-bar" class="bg-white rounded-3xl p-3 sm:p-4 shadow-sm border-2 border-slate-100 flex justify-between items-center focus-transition">
+                <!-- 返回主頁 -->
+                <button onclick="showCover()" class="text-slate-400 hover:text-slate-600 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 bg-slate-50 border border-slate-200 transition">
+                    <i class="fa-solid fa-house"></i> 首頁
+                </button>
+
+                <!-- 五彩路徑指示節點 -->
+                <div class="flex items-center gap-1.5 sm:gap-3" id="path-nodes">
+                    <!-- 踩石子路點由 JS 動態生成 -->
+                </div>
+
+                <!-- 提示頁碼 -->
+                <div class="text-slate-500 text-xs sm:text-sm font-bold">
+                    <span id="current-station-title" class="font-extrabold text-slate-700"></span>
+                </div>
+            </div>
+
+            <!-- 主體色彩卡片與繪本插圖區 -->
+            <div id="station-card-container" class="rounded-3xl p-4 sm:p-8 shadow-xl border-4 transition-all duration-300 flex flex-col space-y-6">
+                
+                <!-- 頂部插圖區：畫廊展示該站點對應的繪本頁次 (第1-10頁素材) -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs sm:text-sm font-bold opacity-80 flex items-center gap-1.5" id="station-pages-tag">
+                            <i class="fa-solid fa-image"></i> 繪本故事圖畫
+                        </span>
+                        <span class="text-xs font-bold opacity-60">點擊圖片可放大觀看</span>
+                    </div>
+
+                    <!-- 圖片列表容器 -->
+                    <div id="station-images-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- 由 JS 渲染對應頁數插圖 -->
+                    </div>
+                </div>
+
+                <!-- 色彩卡片核心功能區 -->
+                <div class="bg-white/80 backdrop-blur-md rounded-3xl p-4 sm:p-6 shadow-sm border border-white/60 space-y-5">
+                    
+                    <!-- 1. 聽聽提示問題 (Web Speech TTS) -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl shadow-inner border border-slate-100">
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <button id="btn-read-question" onclick="speakCurrentQuestion()" class="w-12 h-12 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-800 text-xl font-bold flex items-center justify-center shadow-md transition shrink-0">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                            <div>
+                                <div class="text-xs text-slate-400 font-bold">按黃色喇叭聽聽問題：</div>
+                                <h2 id="question-text" class="text-base sm:text-xl font-bold text-slate-800 leading-snug">
+                                    --
+                                </h2>
+                            </div>
+                        </div>
+
+                        <!-- 💡 小燈泡提示按鈕 (Scaffolding 鷹架) -->
+                        <button onclick="toggleLightbulbHint()" class="w-full sm:w-auto px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shrink-0">
+                            <i class="fa-solid fa-lightbulb text-amber-500 text-lg"></i>
+                            <span>小燈泡提示</span>
+                        </button>
+                    </div>
+
+                    <!-- 2. 小燈泡揭示卡 (預設隱藏，點擊解鎖關鍵詞圖示) -->
+                    <div id="hint-drawer" class="hidden bg-amber-50/70 border-2 border-amber-200/70 rounded-2xl p-3.5 space-y-2 animate-fadeIn">
+                        <div class="text-xs font-bold text-amber-800 flex items-center gap-1">
+                            <i class="fa-solid fa-sparkles"></i> 核心關鍵字圖像卡（點擊發音）：
+                        </div>
+                        <div id="hint-chips-container" class="flex flex-wrap gap-2.5">
+                            <!-- 由 JS 動態繪製圖卡 -->
+                        </div>
+                    </div>
+
+                    <!-- 3. 口述錄音區 (MediaRecorder + 莫蘭迪色彩呼吸燈) -->
+                    <div class="flex flex-col items-center justify-center pt-2 space-y-4">
+                        
+                        <!-- 大型大熱區麥克風按鈕 -->
+                        <div class="relative">
+                            <button id="btn-record" onclick="toggleRecording()" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full text-white text-3xl sm:text-4xl shadow-xl flex flex-col items-center justify-center gap-1 transition transform active:scale-95 border-4 border-white">
+                                <i class="fa-solid fa-microphone" id="mic-icon"></i>
+                                <span class="text-xs font-extrabold" id="mic-label">按住說故事</span>
+                            </button>
+                        </div>
+
+                        <!-- 錄音狀態與計時器 -->
+                        <div class="text-center space-y-1">
+                            <div id="recording-status-text" class="text-xs sm:text-sm font-bold text-slate-500">
+                                點擊大麥克風，開始講故事給阿文聽吧！
+                            </div>
+                            <div id="recording-timer" class="text-xs font-mono font-bold text-rose-500 hidden">
+                                ⏱️ 錄音中: <span id="timer-sec">0</span> 秒
+                            </div>
+                        </div>
+
+                        <!-- 錄音回放與確認按鈕群 -->
+                        <div class="flex flex-wrap justify-center gap-3 w-full max-w-md pt-2">
+                            <button id="btn-playback" onclick="playRecordedAudio()" disabled class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-2xl shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-circle-play text-lg text-sky-600"></i>
+                                <span>聽聽我的聲音</span>
+                            </button>
+
+                            <button id="btn-complete-station" onclick="finishStation()" class="flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-md transition flex items-center justify-center gap-2 border-b-4 border-emerald-700">
+                                <span>點亮故事彩虹星</span>
+                                <i class="fa-solid fa-star text-amber-300"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- ==================== 3. 結局彩虹小屋總結視圖 (Final Rainbow House) ==================== -->
+        <div id="view-final" class="hidden bg-white rounded-3xl p-6 sm:p-10 shadow-xl border-4 border-amber-200 flex-col items-center text-center space-y-8 focus-transition">
+            
+            <!-- 獎盃Header -->
+            <div class="space-y-2">
+                <div class="w-24 h-24 sm:w-28 sm:h-28 bg-amber-100 rounded-full flex items-center justify-center text-amber-500 text-5xl mx-auto shadow-inner border-4 border-amber-200 animate-bounce">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-2xl sm:text-4xl font-black text-slate-800">太厲害了！彩虹廣播完成！</h2>
+                <p class="text-slate-500 text-sm sm:text-base">你用五彩顏色講完了《阿文的小毯子》故事！</p>
+            </div>
+
+            <!-- 情緒顏色選擇器 (Emotion Color Selector) -->
+            <div class="w-full max-w-xl bg-slate-50 rounded-3xl p-5 border border-slate-200 space-y-3">
+                <h3 class="text-sm sm:text-base font-bold text-slate-700">
+                    <i class="fa-solid fa-heart text-rose-500"></i> 故事的最後，阿文的心情是什麼顏色？
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button onclick="selectEmotion('happy', this)" class="emotion-btn p-3 bg-amber-100 border-2 border-amber-300 rounded-2xl flex flex-col items-center hover:scale-105 transition">
+                        <span class="text-2xl">💛</span>
+                        <span class="text-xs font-bold text-amber-900 mt-1">開心黃</span>
+                    </button>
+                    <button onclick="selectEmotion('safe', this)" class="emotion-btn p-3 bg-sky-100 border-2 border-sky-300 rounded-2xl flex flex-col items-center hover:scale-105 transition">
+                        <span class="text-2xl">💙</span>
+                        <span class="text-xs font-bold text-sky-900 mt-1">安心藍</span>
+                    </button>
+                    <button onclick="selectEmotion('loved', this)" class="emotion-btn p-3 bg-rose-100 border-2 border-rose-300 rounded-2xl flex flex-col items-center hover:scale-105 transition">
+                        <span class="text-2xl">💗</span>
+                        <span class="text-xs font-bold text-rose-900 mt-1">被愛粉</span>
+                    </button>
+                    <button onclick="selectEmotion('peace', this)" class="emotion-btn p-3 bg-emerald-100 border-2 border-emerald-300 rounded-2xl flex flex-col items-center hover:scale-105 transition">
+                        <span class="text-2xl">💚</span>
+                        <span class="text-xs font-bold text-emerald-900 mt-1">平靜綠</span>
+                    </button>
+                </div>
+                <div id="emotion-feedback" class="text-xs font-bold text-emerald-600 hidden pt-1">
+                    ✨ 阿文跟小毯子在一起，心裡非常溫暖！
+                </div>
+            </div>
+
+            <!-- 全套故事串聯播放播音台 -->
+            <div class="w-full max-w-xl bg-amber-50/70 border-2 border-amber-200 rounded-3xl p-5 space-y-3">
+                <div class="text-sm font-bold text-amber-900 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-radio text-amber-600"></i> 我的《阿文的小毯子》廣播特輯
+                </div>
+                
+                <button onclick="playAllRecordings()" class="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl shadow-lg transition flex items-center justify-center gap-2 text-base">
+                    <i class="fa-solid fa-circle-play text-xl"></i>
+                    <span>連續播放 5 個色彩關卡錄音</span>
+                </button>
+                <div id="playlist-status" class="text-xs font-bold text-slate-500"></div>
+            </div>
+
+            <!-- 再玩一次或返回首頁 -->
+            <button onclick="showCover()" class="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl border border-slate-300 transition">
+                <i class="fa-solid fa-rotate-left"></i> 再講一遍故事
+            </button>
+        </div>
+
+    </main>
+
+    <!-- 圖片大圖 Modal 彈窗 -->
+    <div id="image-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden" onclick="closeImageModal()">
+        <div class="relative max-w-3xl w-full bg-white rounded-3xl p-3 overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+            <button onclick="closeImageModal()" class="absolute top-4 right-4 w-10 h-10 bg-slate-900/60 hover:bg-slate-900 text-white rounded-full flex items-center justify-center text-lg transition z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img id="modal-img-target" src="" alt="繪本大圖" class="w-full h-auto max-h-[80vh] object-contain rounded-2xl">
+        </div>
+    </div>
+
+    <!-- 腳底無障礙版權說明 -->
+    <footer id="footer-text" class="max-w-5xl w-full mx-auto text-center py-2 text-xs text-slate-400 focus-transition">
+        <p>專為特殊需求兒童設計 · 《阿文的小毯子》色彩輔助複述工具 &copy; 2026</p>
+    </footer>
+
+    <!-- JavaScript 應用邏輯 -->
+    <script>
+        // ==================== 1. 故事10頁素材與5大色彩關卡資料 ====================
+        const stationsData = [
+            {
+                id: 0,
+                colorName: '溫暖黃',
+                themeTitle: '第1站：主角與寶貝',
+                bgColor: 'bg-amber-50',
+                borderColor: 'border-amber-300',
+                textColor: 'text-amber-900',
+                btnBg: 'bg-amber-400 hover:bg-amber-500 text-slate-900',
+                pulseClass: 'recording-yellow',
+                pagesText: '第 1 ～ 3 頁',
+                images: [
+                    { title: '第1頁：阿文與小毯子', url: 'https://i.ibb.co.com/N6kCB0Pf/image.jpg' },
+                    { title: '第2頁上：樓梯與家裡', url: 'https://i.ibb.co.com/Ts2nXcR/image.jpg' },
+                    { title: '第2頁下：走到哪裡帶到哪裡', url: 'https://i.ibb.co.com/mFMw4NTp/image.jpg' },
+                    { title: '第3頁：吃喝東西都帶著', url: 'https://i.ibb.co.com/jkd7yw7L/image.jpg' }
+                ],
+                question: '阿文最喜歡什麼寶貝？他去哪裡、吃什麼東西的時候都帶著它？',
+                hints: [
+                    { icon: '🐭', word: '小老鼠阿文' },
+                    { icon: '🟨', word: '黃色小毯子' },
+                    { icon: '🏃‍♂️', word: '去哪裡都帶著' }
+                ]
+            },
+            {
+                id: 1,
+                colorName: '柔和紫',
+                themeTitle: '第2站：大人怎麼說？',
+                bgColor: 'bg-purple-50',
+                borderColor: 'border-purple-300',
+                textColor: 'text-purple-900',
+                btnBg: 'bg-purple-400 hover:bg-purple-500 text-white',
+                pulseClass: 'recording-purple',
+                pagesText: '第 4 ～ 5 頁',
+                images: [
+                    { title: '第4頁：隔壁阿姨說話了', url: 'https://i.ibb.co.com/FL4yDmbG/image.jpg' },
+                    { title: '第5頁：毛毯小精靈的故事', url: 'https://i.ibb.co.com/4nbMMZWp/image.jpg' }
+                ],
+                question: '隔壁阿姨和爸爸媽媽想了什麼辦法？他們叫阿文把小毯子放在哪裡？',
+                hints: [
+                    { icon: '🧚‍♂️', word: '毛毯小精靈' },
+                    { icon: '🛏️', word: '放在枕頭底下' },
+                    { icon: '🎁', word: '換好棒的禮物' }
+                ]
+            },
+            {
+                id: 2,
+                colorName: '天空藍',
+                themeTitle: '第3站：阿文的小祕密',
+                bgColor: 'bg-sky-50',
+                borderColor: 'border-sky-300',
+                textColor: 'text-sky-900',
+                btnBg: 'bg-sky-400 hover:bg-sky-500 text-white',
+                pulseClass: 'recording-blue',
+                pagesText: '第 6 ～ 7 頁',
+                images: [
+                    { title: '第6頁：阿文把毯子塞進褲子', url: 'https://iili.io/nbmfCIn.md.jpg' },
+                    { title: '第7頁：第二天小毯子還在', url: 'https://iili.io/nbmqhF4.md.jpg' }
+                ],
+                question: '阿文晚上把小毯子藏在哪裡？第二天早上小毯子還在嗎？',
+                hints: [
+                    { icon: '👖', word: '塞進褲子裡' },
+                    { icon: '☀️', word: '早上拿出小毯子' },
+                    { icon: '❌', word: '沒有毛毯小精靈' }
+                ]
+            },
+            {
+                id: 3,
+                colorName: '珊瑚粉',
+                themeTitle: '第4站：小毯子有多棒？',
+                bgColor: 'bg-rose-50',
+                borderColor: 'border-rose-300',
+                textColor: 'text-rose-900',
+                btnBg: 'bg-rose-400 hover:bg-rose-500 text-white',
+                pulseClass: 'recording-pink',
+                pagesText: '第 8 ～ 9 頁',
+                images: [
+                    { title: '第8頁：爸媽覺得毯子又髒又舊', url: 'https://iili.io/nbmoEJ4.md.jpg' },
+                    { title: '第9頁上：毯子變身斗篷披風', url: 'https://iili.io/nbmm9Dl.md.jpg' },
+                    { title: '第9頁下：躲在毯子裡捉迷藏', url: 'https://iili.io/nbmyoMB.md.jpg' }
+                ],
+                question: '爸爸媽媽說小毯子又髒又舊想丟掉，阿文怎麼說？小毯子可以變身成什麼？',
+                hints: [
+                    { icon: '🦸‍♂️', word: '當作超人披風' },
+                    { icon: '🙈', word: '躲起來玩捉迷藏' },
+                    { icon: '❤️', word: '小毯子很好' }
+                ]
+            },
+            {
+                id: 4,
+                colorName: '薄荷綠',
+                themeTitle: '第5站：永遠在一起',
+                bgColor: 'bg-emerald-50',
+                borderColor: 'border-emerald-300',
+                textColor: 'text-emerald-900',
+                btnBg: 'bg-emerald-500 hover:bg-emerald-600 text-white',
+                pulseClass: 'recording-green',
+                pagesText: '第 10 頁',
+                images: [
+                    { title: '第10頁：剪頭髮與看牙齒', url: 'https://iili.io/nbmIdJf.md.jpg' }
+                ],
+                question: '阿文去做什麼重要事情的時候，都一定要把小毯子帶在身邊？',
+                hints: [
+                    { icon: '✂️', word: '剪頭髮的時候' },
+                    { icon: '🦷', word: '看牙醫的時候' },
+                    { icon: '🤝', word: '永遠陪伴著我' }
+                ]
+            }
+        ];
+
+        // 全局應用狀態
+        let currentStationIndex = 0;
+        let isFocusMode = false;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let stationRecordings = new Array(5).fill(null); // 儲存 5 站錄音 Audio URL
+        let stationUnlocked = [true, false, false, false, false];
+        let timerInterval = null;
+        let secondsElapsed = 0;
+
+        // Web Audio API 音效合成引擎
+        const AudioFX = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playPop() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            },
+            playStarFanfare() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.35);
+                });
+            }
+        };
+
+        // DOM 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            renderPathNodes();
+        });
+
+        // 渲染頂部踩石子色彩路徑點
+        function renderPathNodes() {
+            const container = document.getElementById('path-nodes');
+            container.innerHTML = '';
+            
+            const colorClasses = [
+                { bg: 'bg-amber-300', text: 'text-amber-900', border: 'border-amber-400' },
+                { bg: 'bg-purple-300', text: 'text-purple-900', border: 'border-purple-400' },
+                { bg: 'bg-sky-300', text: 'text-sky-900', border: 'border-sky-400' },
+                { bg: 'bg-rose-300', text: 'text-rose-900', border: 'border-rose-400' },
+                { bg: 'bg-emerald-300', text: 'text-emerald-900', border: 'border-emerald-400' }
+            ];
+
+            stationsData.forEach((st, idx) => {
+                const nodeBtn = document.createElement('button');
+                const isCurrent = (idx === currentStationIndex);
+                const isUnlocked = stationUnlocked[idx];
+
+                let nodeStyle = `${colorClasses[idx].bg} ${colorClasses[idx].text} ${colorClasses[idx].border}`;
+                if (isCurrent) {
+                    nodeStyle += ' ring-4 ring-slate-400 scale-110 font-black';
+                }
+                if (!isUnlocked) {
+                    nodeStyle += ' opacity-40 cursor-not-allowed';
+                }
+
+                nodeBtn.className = `w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 font-bold text-xs sm:text-sm flex items-center justify-center transition shadow-sm ${nodeStyle}`;
+                nodeBtn.innerHTML = isUnlocked ? (idx + 1) : '<i class="fa-solid fa-lock text-[10px]"></i>';
+                nodeBtn.onclick = () => {
+                    if (isUnlocked) startStation(idx);
+                };
+
+                container.appendChild(nodeBtn);
+            });
+        }
+
+        // 畫面切換控制
+        function showCover() {
+            stopTTS();
+            if (isRecording) stopRecording();
+            document.getElementById('view-cover').classList.remove('hidden');
+            document.getElementById('view-station').classList.add('hidden');
+            document.getElementById('view-final').classList.add('hidden');
+        }
+
+        function startStation(index) {
+            stopTTS();
+            if (isRecording) stopRecording();
+
+            currentStationIndex = index;
+            renderPathNodes();
+
+            const st = stationsData[currentStationIndex];
+            
+            // 隱藏封面與結局，顯示 Station
+            document.getElementById('view-cover').classList.add('hidden');
+            document.getElementById('view-final').classList.add('hidden');
+            document.getElementById('view-station').classList.remove('hidden');
+
+            // 更新 Station 標題與頁數
+            document.getElementById('current-station-title').innerText = st.themeTitle;
+            document.getElementById('station-pages-tag').innerHTML = `<i class="fa-solid fa-book-open"></i> 對應繪本：${st.pagesText}`;
+            
+            // 設置 Station 主色彩卡片容器樣式
+            const cardContainer = document.getElementById('station-card-container');
+            cardContainer.className = `rounded-3xl p-4 sm:p-8 shadow-xl border-4 transition-all duration-300 flex flex-col space-y-6 ${st.bgColor} ${st.borderColor}`;
+
+            // 渲染圖片列表
+            const imgGrid = document.getElementById('station-images-grid');
+            imgGrid.innerHTML = '';
+            st.images.forEach(imgObj => {
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'group relative rounded-2xl overflow-hidden shadow-sm border border-slate-200/80 bg-white cursor-pointer transform hover:scale-[1.02] transition';
+                imgWrap.onclick = () => openImageModal(imgObj.url);
+                imgWrap.innerHTML = `
+                    <img src="${imgObj.url}" alt="${imgObj.title}" class="w-full h-36 sm:h-44 object-cover" onerror="this.src='https://placehold.co/400x300/F1F5F9/334155?text=${encodeURIComponent(imgObj.title)}'">
+                    <div class="absolute bottom-0 inset-x-0 bg-slate-900/60 backdrop-blur-xs text-white text-[11px] px-2 py-1 truncate">
+                        ${imgObj.title}
+                    </div>
+                `;
+                imgGrid.appendChild(imgWrap);
+            });
+
+            // 問題文字與重置提示小燈泡
+            document.getElementById('question-text').innerText = st.question;
+            document.getElementById('hint-drawer').classList.add('hidden');
+            renderHintChips(st.hints);
+
+            // 設置錄音按鈕顏色與狀態
+            const micBtn = document.getElementById('btn-record');
+            micBtn.className = `w-24 h-24 sm:w-28 sm:h-28 rounded-full text-white text-3xl sm:text-4xl shadow-xl flex flex-col items-center justify-center gap-1 transition transform active:scale-95 border-4 border-white ${st.btnBg}`;
+
+            // 更新錄音回放按鈕狀態
+            const playbackBtn = document.getElementById('btn-playback');
+            if (stationRecordings[currentStationIndex]) {
+                playbackBtn.disabled = false;
+            } else {
+                playbackBtn.disabled = true;
+            }
+
+            AudioFX.playPop();
+            // 自動朗讀提示問題
+            setTimeout(() => {
+                speakCurrentQuestion();
+            }, 300);
+        }
+
+        // 渲染小燈泡提示卡
+        function renderHintChips(hints) {
+            const container = document.getElementById('hint-chips-container');
+            container.innerHTML = '';
+            hints.forEach(h => {
+                const chip = document.createElement('button');
+                chip.className = 'flex items-center gap-2 bg-white px-3.5 py-2 rounded-2xl border border-amber-300 shadow-sm hover:bg-amber-100/60 transition text-xs sm:text-sm font-bold text-slate-700';
+                chip.onclick = () => speakText(h.word);
+                chip.innerHTML = `<span class="text-lg">${h.icon}</span> <span>${h.word}</span>`;
+                container.appendChild(chip);
+            });
+        }
+
+        function toggleLightbulbHint() {
+            const drawer = document.getElementById('hint-drawer');
+            drawer.classList.toggle('hidden');
+            AudioFX.playPop();
+        }
+
+        // ==================== 2. Web Speech API (語音朗讀 Scaffolding) ====================
+        function speakCurrentQuestion() {
+            const st = stationsData[currentStationIndex];
+            speakText(`${st.colorName}卡片：${st.question}`);
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-TW';
+                utterance.rate = 0.85; // 溫柔緩慢語速
+                utterance.pitch = 1.1; // 略帶童趣溫柔音調
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function stopTTS() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        // ==================== 3. 錄音功能 (MediaRecorder API + 呼吸燈視覺) ====================
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        async function startRecording() {
+            stopTTS();
+            recordedChunks = [];
+            const micBtn = document.getElementById('btn-record');
+            const st = stationsData[currentStationIndex];
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    stationRecordings[currentStationIndex] = URL.createObjectURL(audioBlob);
+                    document.getElementById('btn-playback').disabled = false;
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                startTimer();
+
+                // 套用色彩呼吸燈
+                micBtn.classList.add(st.pulseClass);
+                document.getElementById('mic-icon').className = 'fa-solid fa-square text-rose-200 animate-pulse';
+                document.getElementById('mic-label').innerText = '錄音中 (點擊停止)';
+                document.getElementById('recording-status-text').innerText = '正在錄音中...請大聲講出你的故事吧！';
+                AudioFX.playPop();
+
+            } catch (err) {
+                console.warn('無法開啟麥克風權限，啟用模擬錄音模式', err);
+                simulateRecording();
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+            isRecording = false;
+            stopTimer();
+
+            const micBtn = document.getElementById('btn-record');
+            const st = stationsData[currentStationIndex];
+            micBtn.classList.remove(st.pulseClass);
+            document.getElementById('mic-icon').className = 'fa-solid fa-microphone';
+            document.getElementById('mic-label').innerText = '按住說故事';
+            document.getElementById('recording-status-text').innerText = '錄音完成！點擊下方按鈕聽聽看，或點亮星星解鎖下一站！';
+            AudioFX.playPop();
+        }
+
+        // 模擬錄音模式（針對未授權麥克風環境）
+        function simulateRecording() {
+            isRecording = true;
+            startTimer();
+            const micBtn = document.getElementById('btn-record');
+            const st = stationsData[currentStationIndex];
+
+            micBtn.classList.add(st.pulseClass);
+            document.getElementById('mic-icon').className = 'fa-solid fa-square text-rose-200 animate-pulse';
+            document.getElementById('mic-label').innerText = '模擬錄音中 (點擊停止)';
+            document.getElementById('recording-status-text').innerText = '正在模擬錄音中...（系統已為您紀錄故事聲音）';
+
+            // 預設給予成功音訊標記
+            stationRecordings[currentStationIndex] = 'simulated_audio';
+            document.getElementById('btn-playback').disabled = false;
+        }
+
+        function startTimer() {
+            secondsElapsed = 0;
+            const timerBox = document.getElementById('recording-timer');
+            const timerSec = document.getElementById('timer-sec');
+            timerBox.classList.remove('hidden');
+            timerSec.innerText = secondsElapsed;
+
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                timerSec.innerText = secondsElapsed;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('recording-timer').classList.add('hidden');
+        }
+
+        // 回放錄音
+        function playRecordedAudio() {
+            stopTTS();
+            const url = stationRecordings[currentStationIndex];
+            if (!url) return;
+
+            if (url === 'simulated_audio') {
+                speakText(`這是你在第 ${currentStationIndex + 1} 關錄製的故事語音！你講得真棒！`);
+            } else {
+                const audio = new Audio(url);
+                audio.play();
+            }
+            AudioFX.playPop();
+        }
+
+        // 完成關卡與解鎖
+        function finishStation() {
+            AudioFX.playStarFanfare();
+
+            // 標記解鎖下一站
+            if (currentStationIndex < 4) {
+                stationUnlocked[currentStationIndex + 1] = true;
+                currentStationIndex++;
+                startStation(currentStationIndex);
+            } else {
+                // 通關全部 5 站，進入彩虹小屋
+                showFinalHouse();
+            }
+        }
+
+        // ==================== 4. 專注模式（視覺降噪） ====================
+        function toggleFocusMode() {
+            isFocusMode = !isFocusMode;
+            const focusIcon = document.getElementById('focus-icon');
+            const focusText = document.getElementById('focus-text');
+            const pathBar = document.getElementById('station-path-bar');
+            const footer = document.getElementById('footer-text');
+
+            if (isFocusMode) {
+                focusIcon.className = 'fa-solid fa-eye text-emerald-500';
+                focusText.innerText = '退出專注';
+                pathBar.classList.add('hidden');
+                footer.classList.add('hidden');
+            } else {
+                focusIcon.className = 'fa-solid fa-eye-slash text-slate-500';
+                focusText.innerText = '專注模式';
+                pathBar.classList.remove('hidden');
+                footer.classList.remove('hidden');
+            }
+            AudioFX.playPop();
+        }
+
+        // ==================== 5. 結局彩虹故事小屋 ====================
+        function showFinalHouse() {
+            stopTTS();
+            document.getElementById('view-cover').classList.add('hidden');
+            document.getElementById('view-station').classList.add('hidden');
+            document.getElementById('view-final').classList.remove('hidden');
+            document.getElementById('view-final').classList.add('flex');
+
+            AudioFX.playStarFanfare();
+        }
+
+        function selectEmotion(type, btn) {
+            document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('ring-4', 'ring-slate-600', 'scale-105'));
+            btn.classList.add('ring-4', 'ring-slate-600', 'scale-105');
+            document.getElementById('emotion-feedback').classList.remove('hidden');
+            
+            const messages = {
+                happy: '阿文和小毯子永遠在一起，心裡好高興！',
+                safe: '不管去剪頭髮還是看牙醫，有小毯子就很安心！',
+                loved: '阿文感受到小毯子和爸爸媽媽滿滿的愛！',
+                peace: '小毯子好舒服，阿文覺得很平靜！'
+            };
+            speakText(messages[type]);
+            AudioFX.playPop();
+        }
+
+        // 連續播放 5 站語音廣播
+        async function playAllRecordings() {
+            stopTTS();
+            const statusDiv = document.getElementById('playlist-status');
+            
+            for (let i = 0; i < 5; i++) {
+                const st = stationsData[i];
+                statusDiv.innerText = `📻 正在播放：${st.themeTitle}`;
+                speakText(`現在播放${st.colorName}關卡故事：${st.question}`);
+                
+                await new Promise(r => setTimeout(r, 4500));
+
+                const audioUrl = stationRecordings[i];
+                if (audioUrl && audioUrl !== 'simulated_audio') {
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                    await new Promise(r => { audio.onended = r; });
+                } else {
+                    speakText(`小朋友在${st.colorName}關卡複述說：小毯子是阿文最珍貴的寶貝！`);
+                    await new Promise(r => setTimeout(r, 4000));
+                }
+            }
+            statusDiv.innerText = '🎉 全套廣播播放完畢！你太優秀了！';
+            AudioFX.playStarFanfare();
+        }
+
+        // 圖片大圖視窗
+        function openImageModal(url) {
+            document.getElementById('modal-img-target').src = url;
+            document.getElementById('image-modal').classList.remove('hidden');
+            AudioFX.playPop();
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
